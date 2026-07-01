@@ -3209,6 +3209,7 @@ class SystemConfigService:
                     f"已启用 {preset.display_name} 本地生成 Backend（experimental/limited）。",
                     title_key="settings.setupCheck.llmPrimary.title",
                     message_key="settings.setupCheck.llmPrimary.codexCliConfigured",
+                    message_params={"backend_name": preset.display_name},
                 )
             return self._setup_check(
                 "llm_primary",
