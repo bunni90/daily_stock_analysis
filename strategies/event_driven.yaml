@@ -2,7 +2,9 @@
 
 name: event_driven
 display_name: 事件驱动
+display_name_en: "Event Driven"
 description: 围绕业绩、政策、并购、订单、产品发布等事件，评估催化强度、兑现概率和风险边界。
+description_en: "Evaluates catalyst strength, realization probability, and risk boundaries around earnings, policy, M&A, orders, and product launches."
 category: framework
 core_rules: [3, 5]
 required_tools:
@@ -52,3 +54,43 @@ instructions: |
   - 正向事件已大幅兑现：`sentiment_score -6`
   - 负面事件仍在发酵：`sentiment_score -15`
   - 事件影响不清晰或信息冲突：维持中性并降低置信度
+
+instructions_en: |
+  **Event Driven Strategy**
+
+  Applicable Scenarios:
+  - The company or industry has a clear event catalyst, such as earnings pre-announcement, winning bids, M&A restructuring, policy implementation, product launches, regulatory penalties, lawsuits, etc.
+  - Need to determine whether the event is a short-term trading catalyst, long-term fundamental improvement, or already realized positive.
+
+  Analysis Framework:
+
+  1. **Event Classification**
+     - Use `search_stock_news` to identify recent key events.
+     - Classify events into: earnings, policy, orders/products, capital operations, regulatory/risk.
+     - Clarify the event timing; expired or timing-unknown information cannot serve as the primary basis.
+
+  2. **Impact Pathway**
+     - Determine whether the event affects revenue, profit margin, valuation, financing capability, market share, or merely sentiment.
+     - For major orders or policy positives, explain the realization timeline and uncertainty.
+     - For regulatory, share reduction, penalty, or lawsuit events, prioritize risk.
+
+  3. **Market Reaction**
+     - Use `get_realtime_quote` and `analyze_trend` to determine if the event is already fully reflected in price.
+     - Volume expansion rising but not past key resistance — wait for confirmation.
+     - Volume expansion with price stagnation at highs or positive news followed by spike-and-reversal — be alert for realization pressure.
+
+  4. **Trading Plan**
+     - Before event realization, emphasize position control and time window.
+     - After event realization, re-evaluate whether to switch from "expectation trading" to "earnings verification."
+     - For negative events, first assess whether risk has been sufficiently released before considering a rebound.
+
+  Output Requirements:
+  - Clearly state event nature: Positive / Negative / Neutral / Uncertain.
+  - Provide event credibility, realization timeline, and degree of price reflection.
+  - Trade recommendations must include invalidation conditions, such as announcement below expectations, breaking below key support, or event momentum fading.
+
+  Scoring Adjustment Suggestions:
+  - High-confidence positive event with price not yet fully reflecting it: `sentiment_score +14`
+  - Positive event already largely realized: `sentiment_score -6`
+  - Negative event still unfolding: `sentiment_score -15`
+  - Event impact unclear or conflicting information: maintain neutral and lower confidence

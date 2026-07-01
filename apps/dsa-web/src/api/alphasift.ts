@@ -1,6 +1,7 @@
 import apiClient from './index';
 import { systemConfigApi } from './systemConfig';
 import { toCamelCase } from './utils';
+import { UI_TEXT, formatUiText, type UiLanguage } from '../i18n/uiText';
 
 const ALPHASIFT_SCREEN_TIMEOUT_MS = 180000;
 const ALPHASIFT_INSTALL_TIMEOUT_MS = 300000;
@@ -334,8 +335,10 @@ export const alphasiftApi = {
     try {
       const status = await alphasiftApi.getStatus();
       if (!status.available) {
+        const lang = (document.documentElement.lang as UiLanguage) || 'en';
+        const ui = UI_TEXT[lang];
         const reason = status.diagnostics?.reason ? `（${status.diagnostics.reason}）` : '';
-        throw new Error(`AlphaSift 适配层不可用${reason}。请确认后端已安装项目依赖，必要时执行 pip install -r requirements.txt 或重建 Docker/桌面后端。`);
+        throw new Error(formatUiText(ui['screening.error.enableUnavailable'], { reason }));
       }
     } catch (error) {
       try {

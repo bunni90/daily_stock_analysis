@@ -18,6 +18,8 @@ from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.i18n import t
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,7 +63,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 status_code=500,
                 content={
                     "error": "internal_error",
-                    "message": "服务器内部错误，请稍后重试",
+                    "message": t("api.internal_error"),
                     "detail": str(e) if logger.isEnabledFor(logging.DEBUG) else None
                 }
             )
@@ -105,7 +107,7 @@ def add_error_handlers(app) -> None:
             status_code=422,
             content={
                 "error": "validation_error",
-                "message": "请求参数验证失败",
+                "message": t("api.validation_error"),
                 "detail": exc.errors()
             }
         )
@@ -122,7 +124,7 @@ def add_error_handlers(app) -> None:
             status_code=500,
             content={
                 "error": "internal_error",
-                "message": "服务器内部错误",
+                "message": t("api.internal_error_short"),
                 "detail": None
             }
         )

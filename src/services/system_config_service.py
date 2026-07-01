@@ -2925,6 +2925,10 @@ class SystemConfigService:
         status: str,
         message: str,
         next_step: Optional[str] = None,
+        title_key: Optional[str] = None,
+        message_key: Optional[str] = None,
+        next_step_key: Optional[str] = None,
+        message_params: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         return {
             "key": key,
@@ -2934,6 +2938,10 @@ class SystemConfigService:
             "status": status,
             "message": message,
             "next_step": next_step,
+            "title_key": title_key,
+            "message_key": message_key,
+            "next_step_key": next_step_key,
+            "message_params": message_params,
         }
 
     @staticmethod
@@ -3199,6 +3207,8 @@ class SystemConfigService:
                     True,
                     "configured",
                     f"已启用 {preset.display_name} 本地生成 Backend（experimental/limited）。",
+                    title_key="settings.setupCheck.llmPrimary.title",
+                    message_key="settings.setupCheck.llmPrimary.codexCliConfigured",
                 )
             return self._setup_check(
                 "llm_primary",
@@ -3218,6 +3228,9 @@ class SystemConfigService:
                     if generation_backend == CODEX_CLI_BACKEND_ID
                     else "请先安装并登录对应 CLI，或将 GENERATION_BACKEND 设回 litellm。"
                 ),
+                title_key="settings.setupCheck.llmPrimary.title",
+                message_key="settings.setupCheck.llmPrimary.codexCliNotFound",
+                next_step_key="settings.setupCheck.llmPrimary.codexCliNotFoundNextStep",
             )
 
         model, source = self._resolve_setup_primary_model(effective_map)
@@ -3228,6 +3241,12 @@ class SystemConfigService:
                 "channel": "LLM 渠道",
                 "legacy": "legacy provider",
             }.get(source, source)
+            source_key = {
+                "explicit": "settings.setupCheck.sourceLabel.explicit",
+                "yaml": "settings.setupCheck.sourceLabel.yaml",
+                "channel": "settings.setupCheck.sourceLabel.channel",
+                "legacy": "settings.setupCheck.sourceLabel.legacy",
+            }.get(source)
             return self._setup_check(
                 "llm_primary",
                 "LLM 主渠道",
@@ -3235,6 +3254,9 @@ class SystemConfigService:
                 True,
                 "configured",
                 f"已检测到 {source_label}: {model}",
+                title_key="settings.setupCheck.llmPrimary.title",
+                message_key="settings.setupCheck.llmPrimary.modelDetected",
+                message_params={"sourceLabel": source_key or source_label, "model": model},
             )
         return self._setup_check(
             "llm_primary",
@@ -3244,6 +3266,9 @@ class SystemConfigService:
             "needs_action",
             source,
             "请配置 LITELLM_MODEL、LLM_CHANNELS、LITELLM_CONFIG 或 legacy provider API Key。",
+            title_key="settings.setupCheck.llmPrimary.title",
+            message_key="settings.setupCheck.llmPrimary.noModel",
+            next_step_key="settings.setupCheck.llmPrimary.noModelNextStep",
         )
 
     def _build_setup_agent_llm_check(
@@ -3268,6 +3293,9 @@ class SystemConfigService:
                 "needs_action",
                 f"Agent 工具调用暂不支持 {agent_backend} text-only backend。",
                 "请将 AGENT_GENERATION_BACKEND 设为 auto 或 litellm，并配置 LiteLLM 工具调用渠道。",
+                title_key="settings.setupCheck.agentChannel.title",
+                message_key="settings.setupCheck.agentChannel.codexCliUnsupported",
+                next_step_key="settings.setupCheck.agentChannel.codexCliUnsupportedNextStep",
             )
 
         agent_model_raw = (effective_map.get("AGENT_LITELLM_MODEL") or "").strip()
@@ -3288,6 +3316,9 @@ class SystemConfigService:
                             "Hermes Phase 3 不支持 Agent 工具调用。",
                             "如需使用 Ask-Stock Agent，请配置非 Hermes 的 AGENT_LITELLM_MODEL，"
                             "或配置包含非 Hermes deployment 的 mixed Agent route。",
+                            title_key="settings.setupCheck.agentChannel.title",
+                            message_key="settings.setupCheck.agentChannel.codexCliHermesOnly",
+                            next_step_key="settings.setupCheck.agentChannel.codexCliHermesOnlyNextStep",
                         )
                     return self._setup_check(
                         "llm_agent",
@@ -3296,6 +3327,9 @@ class SystemConfigService:
                         True,
                         "configured",
                         f"普通分析使用 Codex CLI；Agent 工具调用仍使用 LiteLLM 主模型: {litellm_model}",
+                        title_key="settings.setupCheck.agentChannel.title",
+                        message_key="settings.setupCheck.agentChannel.codexCliWithLitellm",
+                        message_params={"model": litellm_model},
                     )
                 if agent_backend == LITELLM_BACKEND_ID:
                     return self._setup_check(
@@ -3306,6 +3340,9 @@ class SystemConfigService:
                         "needs_action",
                         "AGENT_GENERATION_BACKEND 已选择 litellm，但未检测到可用 LiteLLM 模型配置。",
                         "如需使用 Ask-Stock Agent，请配置 AGENT_LITELLM_MODEL、LITELLM_MODEL、LLM_CHANNELS 或 LITELLM_CONFIG。",
+                        title_key="settings.setupCheck.agentChannel.title",
+                        message_key="settings.setupCheck.agentChannel.litellmBackendNoModel",
+                        next_step_key="settings.setupCheck.agentChannel.litellmBackendNoModelNextStep",
                     )
                 return self._setup_check(
                     "llm_agent",
@@ -3315,6 +3352,9 @@ class SystemConfigService:
                     "needs_action",
                     "Agent 工具调用需要 LiteLLM 模型配置；local CLI 主生成方式不会被自动继承。",
                     "如需使用 Ask-Stock Agent，请配置 LiteLLM 模型，或将 AGENT_GENERATION_BACKEND 固定为 litellm 后补齐模型配置。",
+                    title_key="settings.setupCheck.agentChannel.title",
+                    message_key="settings.setupCheck.agentChannel.codexCliNoInherit",
+                    next_step_key="settings.setupCheck.agentChannel.codexCliNoInheritNextStep",
                 )
             if primary_check["status"] == "configured":
                 primary_model, _source = self._resolve_setup_primary_model(effective_map)
@@ -3327,6 +3367,9 @@ class SystemConfigService:
                         "needs_action",
                         "Hermes Phase 3 不支持 Agent 工具调用，且当前继承的主模型没有非 Hermes deployment。",
                         "请选择非 Hermes Agent 模型，或配置包含非 Hermes deployment 的 mixed Agent route。",
+                        title_key="settings.setupCheck.agentChannel.title",
+                        message_key="settings.setupCheck.agentChannel.hermesOnlyInherited",
+                        next_step_key="settings.setupCheck.agentChannel.hermesOnlyInheritedNextStep",
                     )
                 return self._setup_check(
                     "llm_agent",
@@ -3335,6 +3378,8 @@ class SystemConfigService:
                     True,
                     "inherited",
                     "未单独配置 Agent 主模型，将继承 LLM 主渠道。",
+                    title_key="settings.setupCheck.agentChannel.title",
+                    message_key="settings.setupCheck.agentChannel.inheritedFromPrimary",
                 )
             return self._setup_check(
                 "llm_agent",
@@ -3344,6 +3389,9 @@ class SystemConfigService:
                 "needs_action",
                 "Agent 未配置独立模型，且 LLM 主渠道尚不可用。",
                 "请先补齐 LLM 主渠道配置。",
+                title_key="settings.setupCheck.agentChannel.title",
+                message_key="settings.setupCheck.agentChannel.primaryNotReady",
+                next_step_key="settings.setupCheck.agentChannel.primaryNotReadyNextStep",
             )
 
         configured_models = set(
@@ -3360,12 +3408,19 @@ class SystemConfigService:
                 "needs_action",
                 f"Agent 主模型 {agent_model} 只有 Hermes deployment，Phase 3 不支持 Agent 工具调用。",
                 "请选择非 Hermes Agent 模型，或配置 mixed route 中的非 Hermes deployment。",
+                title_key="settings.setupCheck.agentChannel.title",
+                message_key="settings.setupCheck.agentChannel.hermesOnlyExplicit",
+                message_params={"model": agent_model},
+                next_step_key="settings.setupCheck.agentChannel.hermesOnlyExplicitNextStep",
             )
         configured_agent_message = f"已配置 Agent 主模型: {agent_model}"
+        configured_agent_message_key = "settings.setupCheck.agentChannel.configured"
+        configured_agent_params = {"model": agent_model}
         if generation_backend == CODEX_CLI_BACKEND_ID:
             configured_agent_message = (
                 f"普通分析使用 Codex CLI；Agent 工具调用仍使用 LiteLLM 主模型: {agent_model}"
             )
+            configured_agent_message_key = "settings.setupCheck.agentChannel.codexCliWithLitellm"
         if _uses_direct_env_provider(agent_model):
             return self._setup_check(
                 "llm_agent",
@@ -3374,6 +3429,9 @@ class SystemConfigService:
                 True,
                 "configured",
                 configured_agent_message,
+                title_key="settings.setupCheck.agentChannel.title",
+                message_key=configured_agent_message_key,
+                message_params=configured_agent_params,
             )
         if (
             not configured_models
@@ -3386,6 +3444,9 @@ class SystemConfigService:
                 True,
                 "configured",
                 configured_agent_message,
+                title_key="settings.setupCheck.agentChannel.title",
+                message_key=configured_agent_message_key,
+                message_params=configured_agent_params,
             )
 
         return self._setup_check(
@@ -3396,6 +3457,10 @@ class SystemConfigService:
             "needs_action",
             f"Agent 主模型 {agent_model} 缺少可用渠道或匹配的 API Key。",
             "请调整 AGENT_LITELLM_MODEL 或补齐对应渠道配置。",
+            title_key="settings.setupCheck.agentChannel.title",
+            message_key="settings.setupCheck.agentChannel.noChannelForKey",
+            message_params={"model": agent_model},
+            next_step_key="settings.setupCheck.agentChannel.noChannelForKeyNextStep",
         )
 
     def _build_setup_stock_list_check(self, effective_map: Dict[str, str]) -> Dict[str, Any]:
@@ -3408,6 +3473,9 @@ class SystemConfigService:
                 True,
                 "configured",
                 f"已配置 {len(stocks)} 只股票。",
+                title_key="settings.setupCheck.stockList.title",
+                message_key="settings.setupCheck.stockList.configured",
+                message_params={"count": str(len(stocks))},
             )
         return self._setup_check(
             "stock_list",
@@ -3417,6 +3485,9 @@ class SystemConfigService:
             "needs_action",
             "当前 STOCK_LIST 为空。",
             "请至少添加 1 只股票用于首次试跑。",
+            title_key="settings.setupCheck.stockList.title",
+            message_key="settings.setupCheck.stockList.empty",
+            next_step_key="settings.setupCheck.stockList.emptyNextStep",
         )
 
     def _build_setup_notification_check(self, effective_map: Dict[str, str]) -> Dict[str, Any]:
@@ -3469,6 +3540,8 @@ class SystemConfigService:
                 False,
                 "configured",
                 "已检测到至少一个通知渠道配置。",
+                title_key="settings.setupCheck.notification.title",
+                message_key="settings.setupCheck.notification.configured",
             )
         return self._setup_check(
             "notification",
@@ -3478,6 +3551,9 @@ class SystemConfigService:
             "optional",
             "通知为可选项，未配置也不影响首次跑通。",
             "需要推送时可稍后配置飞书、Telegram、邮件或其他通知渠道。",
+            title_key="settings.setupCheck.notification.title",
+            message_key="settings.setupCheck.notification.optional",
+            next_step_key="settings.setupCheck.notification.optionalNextStep",
         )
 
     def _build_setup_storage_check(self, effective_map: Dict[str, str]) -> Dict[str, Any]:
@@ -3496,12 +3572,20 @@ class SystemConfigService:
                 "needs_action",
                 f"数据库路径父目录不可用: {parent}",
                 "请检查 DATABASE_PATH 或上级目录权限。",
+                title_key="settings.setupCheck.storage.title",
+                message_key="settings.setupCheck.storage.parentUnavailable",
+                message_params={"parent": str(parent)},
+                next_step_key="settings.setupCheck.storage.parentUnavailableNextStep",
             )
 
         if os.access(probe, os.W_OK):
             detail = f"数据库路径可用: {db_path}"
+            detail_key = "settings.setupCheck.storage.dbPathAvailable"
+            detail_params: Optional[Dict[str, str]] = {"path": str(db_path)}
             if not parent.exists():
                 detail = f"数据库上级目录可创建: {parent}"
+                detail_key = "settings.setupCheck.storage.parentCreatable"
+                detail_params = {"parent": str(parent)}
             return self._setup_check(
                 "storage",
                 "数据库 / 本地存储",
@@ -3509,6 +3593,9 @@ class SystemConfigService:
                 True,
                 "configured",
                 detail,
+                title_key="settings.setupCheck.storage.title",
+                message_key=detail_key,
+                message_params=detail_params,
             )
 
         return self._setup_check(
@@ -3519,6 +3606,10 @@ class SystemConfigService:
             "needs_action",
             f"数据库路径上级目录不可写: {probe}",
             "请调整 DATABASE_PATH 或目录权限。",
+            title_key="settings.setupCheck.storage.title",
+            message_key="settings.setupCheck.storage.parentNotWritable",
+            message_params={"path": str(probe)},
+            next_step_key="settings.setupCheck.storage.parentNotWritableNextStep",
         )
 
     @staticmethod

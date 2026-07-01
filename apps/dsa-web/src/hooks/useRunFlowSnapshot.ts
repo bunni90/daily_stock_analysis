@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { analysisApi } from '../api/analysis';
 import { getParsedApiError, type ParsedApiError } from '../api/error';
 import { historyApi } from '../api/history';
+import { useUiLanguage } from '../contexts/UiLanguageContext';
+import type { UiTextKey } from '../i18n/uiText';
 import type { RunFlowEdge, RunFlowEvent, RunFlowNode, RunFlowSnapshot, RunFlowSnapshotSource } from '../types/runFlow';
 import { useTaskStream } from './useTaskStream';
 
@@ -197,12 +199,15 @@ const providerRunFromEvent = (
   fallbackTo: metadataString(event.metadata, 'fallbackTo', 'fallback_to'),
 });
 
+type RunFlowT = (key: UiTextKey) => string;
+
 const appendDerivedEdge = (
   nodes: RunFlowNode[],
   edges: RunFlowEdge[],
   events: RunFlowEvent[],
   displayEvent: RunFlowEvent,
   nodeId: string | null,
+  t: RunFlowT,
 ): RunFlowEdge[] => {
   if (!nodeId) {
     return edges;
@@ -236,7 +241,7 @@ const appendDerivedEdge = (
 
     if (!previousEvent?.nodeId) {
       return nodeById.has('task_queue')
-        ? appendEdge(edges, 'task_queue', nodeId, 'control', node.status, '调用')
+        ? appendEdge(edges, 'task_queue', nodeId, 'control', node.status, t('runflow.invoke'))
         : edges;
     }
 
@@ -249,10 +254,10 @@ const appendDerivedEdge = (
       providerRunFromEvent(displayEvent, node),
     );
     const label = transitionKind === 'fallback'
-      ? '降级'
+      ? t('runflow.degrade')
       : transitionKind === 'retry'
-        ? '重试'
-        : '调用';
+        ? t('runflow.retry')
+        : t('runflow.invoke');
     const message = metadataString(displayEvent.metadata, 'fallbackFrom', 'fallback_from', 'fallbackTo', 'fallback_to');
     return appendEdge(edges, previousNode.id, nodeId, transitionKind, node.status, label, message);
   }
@@ -260,7 +265,7 @@ const appendDerivedEdge = (
   if (displayEvent.type === 'llm_run' || displayEvent.type === 'llm_run_started') {
     const anchor = nodeById.has('analysis_pipeline') ? 'analysis_pipeline' : 'task_queue';
     return nodeById.has(anchor)
-      ? appendEdge(edges, anchor, nodeId, 'data', node.status, '生成')
+      ? appendEdge(edges, anchor, nodeId, 'data', node.status, t('runflow.generate'))
       : edges;
   }
 
@@ -268,7 +273,7 @@ const appendDerivedEdge = (
     const anchor = latestEventNodeId(events, nodeById, ['llm_run', 'llm_run_started'], displayEvent)
       || (nodeById.has('analysis_pipeline') ? 'analysis_pipeline' : 'task_queue');
     return nodeById.has(anchor)
-      ? appendEdge(edges, anchor, nodeId, 'data', node.status, '保存')
+      ? appendEdge(edges, anchor, nodeId, 'data', node.status, t('runflow.save'))
       : edges;
   }
 
@@ -277,7 +282,7 @@ const appendDerivedEdge = (
       || latestEventNodeId(events, nodeById, ['llm_run', 'llm_run_started'], displayEvent)
       || (nodeById.has('analysis_pipeline') ? 'analysis_pipeline' : 'task_queue');
     return nodeById.has(anchor)
-      ? appendEdge(edges, anchor, nodeId, 'control', node.status, '通知')
+      ? appendEdge(edges, anchor, nodeId, 'control', node.status, t('runflow.notify'))
       : edges;
   }
 
@@ -343,6 +348,7 @@ const buildLiveSummary = (
 const mergeFlowEventIntoSnapshot = (
   snapshot: RunFlowSnapshot,
   flowEvent: RunFlowEvent,
+  t: RunFlowT,
 ): RunFlowSnapshot => {
   const nodeCandidate = flowEvent.metadata?.node;
   const eventMetadata = { ...(flowEvent.metadata || {}) };
@@ -364,6 +370,7 @@ const mergeFlowEventIntoSnapshot = (
         events,
         displayEvent,
         eventNodeId(displayEvent, node),
+        t,
       ),
       eventNodeId(displayEvent, node),
       node?.status,
@@ -411,10 +418,11 @@ const shouldReplayFlowEvent = (snapshot: RunFlowSnapshot, flowEvent: RunFlowEven
 const replayFlowEvents = (
   snapshot: RunFlowSnapshot,
   flowEvents: RunFlowEvent[],
+  t: RunFlowT,
 ): RunFlowSnapshot => flowEvents.reduce(
   (currentSnapshot, flowEvent) => (
     shouldReplayFlowEvent(currentSnapshot, flowEvent)
-      ? mergeFlowEventIntoSnapshot(currentSnapshot, flowEvent)
+      ? mergeFlowEventIntoSnapshot(currentSnapshot, flowEvent, t)
       : currentSnapshot
   ),
   snapshot,
@@ -424,6 +432,8 @@ export function useRunFlowSnapshot({
   source,
   enabled = true,
 }: UseRunFlowSnapshotOptions): UseRunFlowSnapshotResult {
+  const { t: hookT } = useUiLanguage();
+  const t = hookT as unknown as RunFlowT;
   const [requestState, setRequestState] = useState<RunFlowRequestState>({
     requestKey: 'none',
     snapshot: null,
@@ -460,7 +470,7 @@ export function useRunFlowSnapshot({
         }
         return {
           ...current,
-          snapshot: mergeFlowEventIntoSnapshot(current.snapshot as RunFlowSnapshot, flowEvent),
+          snapshot: mergeFlowEventIntoSnapshot(current.snapshot as RunFlowSnapshot, flowEvent, t),
         };
       });
     },
@@ -496,7 +506,7 @@ export function useRunFlowSnapshot({
       .then((result) => {
         if (active) {
           const snapshot = sourceType === 'task'
-            ? replayFlowEvents(result, flowEventBufferRef.current)
+            ? replayFlowEvents(result, flowEventBufferRef.current, t)
             : result;
           setRequestState({
             requestKey,
@@ -518,7 +528,7 @@ export function useRunFlowSnapshot({
     return () => {
       active = false;
     };
-  }, [recordId, requestKey, shouldLoad, sourceType, taskId]);
+  }, [recordId, requestKey, shouldLoad, sourceType, t, taskId]);
 
   const hasFreshState = shouldLoad && requestState.requestKey === requestKey;
 

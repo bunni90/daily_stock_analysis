@@ -455,6 +455,11 @@ const fieldOptionLabelMap: Record<string, Record<string, string>> = {
     'auto (regime-based)': '自动（按市场状态）',
     'manual (use agent_skills)': '手动（使用 AGENT_SKILLS）',
   },
+  AGENT_CONTEXT_COMPRESSION_PROFILE: {
+    cost: '成本优先',
+    balanced: '均衡推荐',
+    long_context_raw_first: '长上下文原文优先',
+  },
 };
 
 const fieldOptionLabelMapEn: Record<string, Record<string, string>> = {
@@ -533,6 +538,11 @@ const fieldOptionLabelMapEn: Record<string, Record<string, string>> = {
     'auto (regime-based)': 'Auto (regime-based)',
     'manual (use agent_skills)': 'Manual (use AGENT_SKILLS)',
   },
+  AGENT_CONTEXT_COMPRESSION_PROFILE: {
+    cost: 'Cost-first',
+    balanced: 'Balanced (recommended)',
+    long_context_raw_first: 'Long-context raw-first',
+  },
 };
 
 function normalizeOptionToken(raw: string): string {
@@ -547,11 +557,11 @@ export function getCategoryDescriptionZh(category: SystemConfigCategory, fallbac
   return getCategoryDescription(category, fallback, 'zh');
 }
 
-export function getCategoryTitle(category: SystemConfigCategory, fallback?: string, locale: UiLanguage = 'zh'): string {
+export function getCategoryTitle(category: SystemConfigCategory, fallback?: string, locale: UiLanguage = 'en'): string {
   return categoryTitleMap[locale][category] || fallback || category;
 }
 
-export function getCategoryDescription(category: SystemConfigCategory, fallback?: string, locale: UiLanguage = 'zh'): string {
+export function getCategoryDescription(category: SystemConfigCategory, fallback?: string, locale: UiLanguage = 'en'): string {
   return categoryDescriptionMap[locale][category] || fallback || '';
 }
 
@@ -571,7 +581,7 @@ export function getFieldOptionLabel(
   key: string,
   value: string,
   fallbackLabel?: string,
-  locale: UiLanguage = 'zh',
+  locale: UiLanguage = 'en',
 ): string {
   const map = locale === 'en' ? fieldOptionLabelMapEn[key] : fieldOptionLabelMap[key];
   if (!map) {

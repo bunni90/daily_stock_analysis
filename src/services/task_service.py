@@ -24,6 +24,7 @@ from src.enums import ReportType
 from src.storage import get_db
 from bot.models import BotMessage
 from src.services.stock_code_utils import resolve_index_stock_code_for_analysis
+from src.i18n import t as _t
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +94,7 @@ class TaskService:
 
         normalized_code = resolve_index_stock_code_for_analysis(code)
         if not normalized_code:
-            raise ValueError("股票代码不能为空或仅包含空白字符")
+            raise ValueError(_t("task_service.empty_code"))
 
         task_id = f"{normalized_code}_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
 
@@ -115,7 +116,7 @@ class TaskService:
 
         return {
             "success": True,
-            "message": "分析任务已提交，将异步执行并推送通知",
+            "message": _t("task_service.submitted"),
             "code": normalized_code,
             "task_id": task_id,
             "report_type": report_type.value
@@ -218,7 +219,7 @@ class TaskService:
                 logger.info(f"[TaskService] 股票 {code} 分析完成: {result.operation_advice}")
                 return {"success": True, "task_id": task_id, "result": result_data}
             else:
-                fail_message = "分析返回空结果"
+                fail_message = _t("task_service.empty_result")
                 if result is not None:
                     fail_message = result.error_message or fail_message
                 with self._tasks_lock:

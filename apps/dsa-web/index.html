@@ -14,6 +14,12 @@
         root.classList.add(theme);
         root.style.colorScheme = theme;
       })();
+      (() => {
+        const langKey = 'dsa.uiLanguage';
+        const stored = localStorage.getItem(langKey);
+        const lang = stored === 'zh' || stored === 'en' ? stored : 'en';
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+      })();
     </script>
     <title>dsa-web</title>
   </head>

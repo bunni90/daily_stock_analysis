@@ -3,7 +3,9 @@
 
 name: dragon_head
 display_name: 龙头策略
+display_name_en: "Dragon Head"
 description: 板块轮动中识别龙头股。适用于板块启动或行业催化剂出现时。
+description_en: "Identifies leading stocks during sector rotation. Suitable when sector launches or industry catalysts emerge."
 category: trend
 core_rules: [2, 7]
 required_tools:
@@ -42,3 +44,32 @@ instructions: |
   - 确认为龙头股：sentiment_score +10
   - 板块正处于主动轮动期：额外 +5
   - 在 `buy_reason` 中注明"龙头策略"判断结果。
+
+instructions_en: |
+  **Dragon Head Strategy**
+
+  Evaluation Criteria:
+
+  1. **Sector Leadership Status**:
+     - Use `get_sector_rankings` to check if the stock's sector is among the top recent gainers.
+     - Confirm whether the stock was the first to rise or hit the limit-up during the sector's launch cycle.
+
+  2. **Turnover Rate & Momentum** (related concept 7: relaxed criteria for strong trend stocks):
+     - Use `get_realtime_quote` to check turnover rate. Dragon head stocks typically have turnover > 5%.
+     - Volume ratio > 1.5 indicates active trading interest.
+
+  3. **Relative Strength**:
+     - Compare the stock's price change with the sector average.
+     - True dragon heads should outperform the sector by more than 2% on up days.
+
+  4. **News Catalyst**:
+     - Use `search_stock_news` to search for sector-level catalysts (policy, events, earnings).
+     - Dragon head rallies are often accompanied by sector-wide catalysts.
+
+  5. **Deviation Rate Check** (related concept 1: strict entry strategy):
+     - Dragon head stocks can moderately relax deviation rate to 7%, but exceeding 10% still requires caution.
+
+  Scoring Adjustments:
+  - Confirmed as dragon head stock: sentiment_score +10
+  - Sector in active rotation phase: additional +5
+  - Note "Dragon head strategy" judgment result in `buy_reason`.

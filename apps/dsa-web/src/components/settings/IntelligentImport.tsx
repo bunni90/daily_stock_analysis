@@ -5,7 +5,7 @@ import { stocksApi, type ExtractItem } from '../../api/stocks';
 import { systemConfigApi, SystemConfigConflictError } from '../../api/systemConfig';
 import { Badge, Button, InlineAlert } from '../common';
 import { useUiLanguage } from '../../contexts/UiLanguageContext';
-import type { UiLanguage } from '../../i18n/uiText';
+import type { UiTextKey } from '../../i18n/uiText';
 
 const IMG_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 const IMG_MAX = 5 * 1024 * 1024; // 5MB
@@ -22,14 +22,14 @@ interface IntelligentImportProps {
 
 type ItemWithChecked = ExtractItem & { id: string; checked: boolean };
 
-function getConfidenceMeta(confidence: 'high' | 'medium' | 'low', language: UiLanguage) {
+function getConfidenceMeta(confidence: 'high' | 'medium' | 'low', t: (key: UiTextKey, params?: Record<string, string | number>) => string) {
   if (confidence === 'high') {
-    return { label: language === 'en' ? 'High' : '高', badge: 'success' as const };
+    return { label: t('settings.confidenceHigh'), badge: 'success' as const };
   }
   if (confidence === 'low') {
-    return { label: language === 'en' ? 'Low' : '低', badge: 'warning' as const };
+    return { label: t('settings.confidenceLow'), badge: 'warning' as const };
   }
-  return { label: language === 'en' ? 'Medium' : '中', badge: 'default' as const };
+  return { label: t('settings.confidenceMedium'), badge: 'default' as const };
 }
 
 function normalizeConfidence(confidence?: string | null): 'high' | 'medium' | 'low' {
@@ -103,7 +103,7 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
   onMerged,
   disabled,
 }) => {
-  const { language, t } = useUiLanguage();
+  const { t } = useUiLanguage();
   const [items, setItems] = useState<ItemWithChecked[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
@@ -398,7 +398,7 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
           <div className="max-h-[220px] space-y-1 overflow-y-auto rounded-xl border settings-border-strong settings-surface-overlay-soft p-2">
             {items.map((it) => {
               const confidence = normalizeConfidence(it.confidence);
-              const confidenceMeta = getConfidenceMeta(confidence, language);
+              const confidenceMeta = getConfidenceMeta(confidence, t);
 
               return (
                 <div

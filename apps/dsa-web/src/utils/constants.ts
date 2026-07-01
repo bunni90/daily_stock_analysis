@@ -4,7 +4,11 @@ declare const __APP_PACKAGE_VERSION__: string | undefined;
 declare const __APP_BUILD_TIME__: string | undefined;
 
 const PLACEHOLDER_WEB_VERSION = '0.0.0';
-const UNKNOWN_BUILD_TIME = '未提供';
+
+function getUnknownBuildTime(language?: string): string {
+  if (language === 'en') return 'Not provided';
+  return '未提供';
+}
 
 // 默认保持同源 API，避免生产/静态部署时把请求错误打到用户本机 localhost。
 // 仅在显式提供 VITE_API_URL 时才覆盖默认行为。
@@ -22,7 +26,8 @@ function padBuildPart(value: number) {
   return value.toString().padStart(2, '0');
 }
 
-export function normalizeBuildTimestamp(buildTimestamp?: string) {
+export function normalizeBuildTimestamp(buildTimestamp?: string, language?: string) {
+  const UNKNOWN_BUILD_TIME = getUnknownBuildTime(language);
   const normalized = buildTimestamp?.trim();
   if (!normalized) {
     return UNKNOWN_BUILD_TIME;
@@ -36,7 +41,8 @@ export function normalizeBuildTimestamp(buildTimestamp?: string) {
   return parsed.toISOString();
 }
 
-export function createBuildIdentifier(buildTimestamp?: string) {
+export function createBuildIdentifier(buildTimestamp?: string, language?: string) {
+  const UNKNOWN_BUILD_TIME = getUnknownBuildTime(language);
   const normalized = buildTimestamp?.trim();
   if (!normalized || normalized === UNKNOWN_BUILD_TIME) {
     return 'build-local';
@@ -56,13 +62,15 @@ export function createBuildIdentifier(buildTimestamp?: string) {
 export function resolveWebBuildInfo({
   packageVersion,
   buildTimestamp,
+  language,
 }: {
   packageVersion?: string;
   buildTimestamp?: string;
+  language?: string;
 }): WebBuildInfo {
   const rawVersion = packageVersion?.trim() || PLACEHOLDER_WEB_VERSION;
-  const buildTime = normalizeBuildTimestamp(buildTimestamp);
-  const buildId = createBuildIdentifier(buildTime);
+  const buildTime = normalizeBuildTimestamp(buildTimestamp, language);
+  const buildId = createBuildIdentifier(buildTime, language);
   const isFallbackVersion = rawVersion === PLACEHOLDER_WEB_VERSION;
 
   return {

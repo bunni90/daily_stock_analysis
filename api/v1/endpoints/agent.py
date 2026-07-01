@@ -15,25 +15,26 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from src.config import get_config
 from src.services.agent_model_service import list_agent_model_deployments
+from src.i18n import t as _t
 
-# Tool name -> Chinese display name mapping
+# Tool name -> display name mapping (localized via _t)
 TOOL_DISPLAY_NAMES: Dict[str, str] = {
-    "get_realtime_quote":         "获取实时行情",
-    "get_daily_history":          "获取历史K线",
-    "get_chip_distribution":      "分析筹码分布",
-    "get_analysis_context":       "获取分析上下文",
-    "get_stock_info":             "获取股票基本面",
-    "search_stock_news":          "搜索股票新闻",
-    "search_comprehensive_intel": "搜索综合情报",
-    "analyze_trend":              "分析技术趋势",
-    "calculate_ma":               "计算均线系统",
-    "get_volume_analysis":        "分析量能变化",
-    "analyze_pattern":            "识别K线形态",
-    "get_market_indices":         "获取市场指数",
-    "get_sector_rankings":        "分析行业板块",
-    "get_skill_backtest_summary": "获取技能回测概览",
-    "get_strategy_backtest_summary": "获取策略回测概览",
-    "get_stock_backtest_summary": "获取个股回测数据",
+    "get_realtime_quote":         _t("tool.get_realtime_quote"),
+    "get_daily_history":          _t("tool.get_historical_kline"),
+    "get_chip_distribution":      _t("tool.analyze_chip_distribution"),
+    "get_analysis_context":       _t("tool.get_analysis_context"),
+    "get_stock_info":             _t("tool.get_stock_fundamentals"),
+    "search_stock_news":          _t("tool.search_stock_news"),
+    "search_comprehensive_intel": _t("tool.search_intelligence"),
+    "analyze_trend":              _t("tool.analyze_technical_trend"),
+    "calculate_ma":               _t("tool.calculate_ma_system"),
+    "get_volume_analysis":        _t("tool.analyze_volume_change"),
+    "analyze_pattern":            _t("tool.identify_kline_pattern"),
+    "get_market_indices":         _t("tool.get_market_indices"),
+    "get_sector_rankings":        _t("tool.analyze_industry_sectors"),
+    "get_skill_backtest_summary": _t("tool.get_skill_backtest_summary"),
+    "get_strategy_backtest_summary": _t("tool.get_strategy_backtest_overview"),
+    "get_stock_backtest_summary": _t("tool.get_stock_backtest_data"),
 }
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ class ChatRequest(BaseModel):
         validation_alias=AliasChoices("skills", "strategies"),
     )
     context: Optional[Dict[str, Any]] = None  # Previous analysis context for data reuse
+    report_language: Optional[str] = None  # UI language for prompt selection ("en" / "zh")
 
     @property
     def effective_skills(self) -> Optional[List[str]]:
@@ -101,10 +103,13 @@ async def get_agent_models():
     )
 
 
-def _build_skills_response(config) -> SkillsResponse:
+def _build_skills_response(config, *, report_language: str = "en") -> SkillsResponse:
     from src.agent.factory import get_skill_manager
     from src.agent.skills.defaults import get_primary_default_skill_id
+    from src.report_language import normalize_report_language
 
+    lang = normalize_report_language(report_language)
+    is_en = lang == "en"
     skill_manager = get_skill_manager(config)
     available_skills = sorted(
         [
@@ -119,7 +124,11 @@ def _build_skills_response(config) -> SkillsResponse:
         ),
     )
     skills = [
-        SkillInfo(id=skill.name, name=skill.display_name, description=skill.description)
+        SkillInfo(
+            id=skill.name,
+            name=(skill.display_name_en or skill.display_name) if is_en else skill.display_name,
+            description=(skill.description_en or skill.description) if is_en else skill.description,
+        )
         for skill in available_skills
     ]
     return SkillsResponse(
@@ -129,17 +138,21 @@ def _build_skills_response(config) -> SkillsResponse:
 
 
 @router.get("/skills", response_model=SkillsResponse)
-async def get_skills():
+async def get_skills(language: str = ""):
     """
     Get available agent strategy skills.
     """
-    return _build_skills_response(get_config())
+    config = get_config()
+    report_language = language or getattr(config, "report_language", "en")
+    return _build_skills_response(config, report_language=report_language)
 
 
 @router.get("/strategies", response_model=StrategiesResponse, include_in_schema=False)
-async def get_strategies():
+async def get_strategies(language: str = ""):
     """Compatibility alias for legacy clients."""
-    payload = _build_skills_response(get_config())
+    config = get_config()
+    report_language = language or getattr(config, "report_language", "en")
+    payload = _build_skills_response(config, report_language=report_language)
     return StrategiesResponse(
         strategies=payload.skills,
         default_strategy_id=payload.default_skill_id,
@@ -167,6 +180,8 @@ async def agent_chat(request: ChatRequest):
         ctx = dict(request.context or {})
         if skills is not None:
             ctx["skills"] = skills
+        if request.report_language:
+            ctx["report_language"] = request.report_language
 
         # Offload the blocking call to a thread to avoid blocking the event loop.
         loop = asyncio.get_running_loop()
@@ -396,6 +411,8 @@ async def agent_chat_stream(request: ChatRequest):
     stream_ctx = dict(request.context or {})
     if skills is not None:
         stream_ctx["skills"] = skills
+    if request.report_language:
+        stream_ctx["report_language"] = request.report_language
 
     def progress_callback(event: dict):
         # Enrich tool events with display names

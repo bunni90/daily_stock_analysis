@@ -11,6 +11,7 @@ from typing import List
 
 from bot.commands.base import BotCommand
 from bot.models import BotMessage, BotResponse
+from src.i18n import t as _t
 
 
 class HelpCommand(BotCommand):
@@ -35,7 +36,7 @@ class HelpCommand(BotCommand):
     
     @property
     def description(self) -> str:
-        return "显示帮助信息"
+        return _t("bot.help.desc")
     
     @property
     def usage(self) -> str:
@@ -54,7 +55,7 @@ class HelpCommand(BotCommand):
             command = dispatcher.get_command(cmd_name)
             
             if command is None:
-                return BotResponse.error_response(f"未知命令: {cmd_name}")
+                return BotResponse.error_response(_t("bot.help.unknown_cmd", cmd=cmd_name))
             
             # 构建详细帮助
             help_text = self._format_command_help(command, dispatcher.command_prefix)
@@ -70,9 +71,9 @@ class HelpCommand(BotCommand):
     def _format_help_list(self, commands: List[BotCommand], prefix: str) -> str:
         """格式化命令列表"""
         lines = [
-            "📚 **股票分析助手 - 命令帮助**",
+            _t("bot.help.header"),
             "",
-            "可用命令：",
+            _t("bot.help.available"),
             "",
         ]
         
@@ -91,9 +92,9 @@ class HelpCommand(BotCommand):
         lines.extend([
             "",
             "---",
-            f"💡 输入 {prefix}help <命令名> 查看详细用法",
+            _t("bot.help.footer", prefix=prefix),
             "",
-            "**示例：**",
+            _t("bot.help.examples"),
             "",
             f"• {prefix}analyze 301023 - 奕帆传动",
             "",
@@ -121,7 +122,7 @@ class HelpCommand(BotCommand):
         
         # 权限
         if command.admin_only:
-            lines.append("⚠️ **需要管理员权限**")
+            lines.append(_t("bot.help.admin_warning"))
             lines.append("")
         
         return "\n".join(lines)

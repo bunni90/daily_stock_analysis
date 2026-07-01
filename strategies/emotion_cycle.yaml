@@ -3,7 +3,9 @@
 
 name: emotion_cycle
 display_name: 情绪周期
+display_name_en: "Emotion Cycle"
 description: 基于市场情绪、换手率与量价结构，识别情绪低点（恐慌底）与情绪高点（狂热顶），逆情绪布局。
+description_en: "Based on market sentiment, turnover rate, and price-volume structure. Identifies sentiment lows (panic bottoms) and highs (euphoric tops) for contrarian positioning."
 category: framework
 core_rules: [1, 2, 3, 5]
 required_tools:
@@ -77,3 +79,66 @@ instructions: |
   - 情绪顶部特征满足3项以上：`sentiment_score -12`
   - 情绪顶部特征满足全部5项：`sentiment_score -20`
   - 情绪平稳区间：不调整基础分
+
+instructions_en: |
+  **Sentiment Cycle Strategy**
+
+  Core Philosophy: Market participant emotions cycle through "panic → pessimism → doubt → hope → optimism → excitement → greed → euphoria."
+  Smart money positions at panic bottoms and exits at euphoric tops.
+
+  ## Sentiment Stage Quantitative Indicators
+
+  ### Step 1: Turnover Rate Analysis (Core Sentiment Heat Indicator)
+  Use `get_daily_history` and `get_realtime_quote`:
+
+  - **Turnover rate < 0.5%/day**: Market indifferent, no attention, potential bottom area (buy others' panic when greedy).
+  - **Turnover rate 0.5%~2%**: Normal trading, sentiment stable.
+  - **Turnover rate 2%~5%**: Active, market starting to pay attention, avoid chasing highs.
+  - **Turnover rate > 5%**: High heat, hot money/retail flooding in, alert for sentiment top.
+  - **Turnover rate > 10% (daily average)**: Extreme overheating, typically a short-term top.
+
+  ### Step 2: Consecutive Turnover Rate Trend
+  Use `get_daily_history` to calculate 20-day turnover rate trend:
+  - High to low (sustained cooling) + volume shrinkage → sentiment retreating, wait patiently.
+  - Low to high (accelerating warming) + volume surge → sentiment launching, can enter.
+  - Sudden single-day massive volume (turnover rate exceeding 5x recent) → often institutional distribution, be alert.
+
+  ### Step 3: News Sentiment Analysis
+  Use `search_stock_news` to search recent news, analyze sentiment bias:
+  - News concentrated with "positive realized, earnings beat, limit-up, institutional recommendation" → sentiment may be overheating.
+  - News concentrated with "earnings decline, negative, breaking support" → pessimistic sentiment may create a bottom.
+  - Retail forums/social media sentiment extremely negative → contrarian indicator, may be near bottom.
+
+  ### Step 4: MA Contraction & Volatility
+  Use `analyze_trend`:
+  - MA5/MA10/MA20 three-line convergence (MA contraction) → accumulation, direction TBD, sentiment indifferent.
+  - Volatility dropping to low levels (ATR shrinkage) → sentiment extremely depressed, precursor to breakout.
+
+  ## Sentiment Bottom Characteristics (Buy Zone)
+  Meeting 3 or more of the following:
+  ✅ 20-day turnover rate at a near-1-year low
+  ✅ Volume continuously shrinking, below 50% of 60-day average volume
+  ✅ Recent news predominantly low-key, neutral, or negative
+  ✅ Stock price at or below MA20, but no panic plunge
+  ✅ Institutional holdings stable or slightly increasing (if data available)
+
+  ## Sentiment Top Characteristics (Reduce Zone)
+  Meeting 3 or more of the following:
+  ⚠️ 5-day turnover rate > 2x the 20-day average
+  ⚠️ Pulsing volume expansion (single day)
+  ⚠️ News dominated by positive realization, institutional price target hikes, retail chasing
+  ⚠️ Stock price deviating > 8% from MA5 (high deviation rate)
+  ⚠️ MACD showing top divergence
+
+  ## Output Requirements
+  - Current sentiment stage assessment: Cold bottom / Stable / Warming entry / Overheat alert / Euphoric top.
+  - Current turnover rate compared to 1-year average turnover rate.
+  - Whether sentiment bottom or top characteristics are met (list satisfied conditions).
+  - Provide contrarian-sentiment trade recommendations (be greedy when others are fearful, be cautious when others are greedy).
+
+  Scoring Adjustment Suggestions:
+  - Sentiment bottom characteristics meeting 3+ items: `sentiment_score +14`
+  - Sentiment bottom characteristics meeting all 5 items: `sentiment_score +20`
+  - Sentiment top characteristics meeting 3+ items: `sentiment_score -12`
+  - Sentiment top characteristics meeting all 5 items: `sentiment_score -20`
+  - Sentiment stable range: no adjustment to base score

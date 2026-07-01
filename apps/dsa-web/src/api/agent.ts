@@ -9,6 +9,7 @@ export interface ChatStreamOptions {
 export interface ChatRequest {
   message: string;
   skills?: string[];
+  report_language?: string;
 }
 
 export interface ChatStreamRequest extends ChatRequest {
@@ -56,8 +57,8 @@ export const agentApi = {
     });
     return response.data;
   },
-  async getSkills(): Promise<SkillsResponse> {
-    const response = await apiClient.get<SkillsResponse>('/api/v1/agent/skills');
+  async getSkills(language: string = 'en'): Promise<SkillsResponse> {
+    const response = await apiClient.get<SkillsResponse>('/api/v1/agent/skills', { params: { language } });
     return response.data;
   },
   async getChatSessions(limit = 50): Promise<ChatSessionItem[]> {
@@ -79,7 +80,7 @@ export const agentApi = {
     }>('/api/v1/agent/chat/send', { content });
     const data = response.data;
     if (data.success === false) {
-      throw new Error(data.message || '发送失败');
+      throw new Error(data.message || 'Send failed');
     }
     return { success: true };
   },

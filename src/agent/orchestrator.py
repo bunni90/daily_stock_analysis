@@ -113,6 +113,12 @@ class AgentOrchestrator:
         except (TypeError, ValueError):
             return 0
 
+    def _resolve_skill_instructions(self, report_language: str) -> str:
+        """Resolve skill instructions per-request, respecting report_language."""
+        if self.skill_manager is not None:
+            return self.skill_manager.get_skill_instructions(report_language=report_language)
+        return self.skill_instructions
+
     def _build_timeout_result(
         self,
         stats: AgentRunStats,
@@ -599,7 +605,9 @@ class AgentOrchestrator:
         common_kwargs = dict(
             tool_registry=self.tool_registry,
             llm_adapter=self.llm_adapter,
-            skill_instructions=self.skill_instructions,
+            skill_instructions=self._resolve_skill_instructions(
+                (ctx.meta.get("report_language") or "en") if ctx else "en"
+            ),
             technical_skill_policy=self.technical_skill_policy,
         )
 
@@ -632,7 +640,9 @@ class AgentOrchestrator:
             common_kwargs = dict(
                 tool_registry=self.tool_registry,
                 llm_adapter=self.llm_adapter,
-                skill_instructions=self.skill_instructions,
+                skill_instructions=self._resolve_skill_instructions(
+                    (ctx.meta.get("report_language") or "en") if ctx else "en"
+                ),
                 technical_skill_policy=self.technical_skill_policy,
             )
             router = SkillRouter()
@@ -711,7 +721,7 @@ class AgentOrchestrator:
                 requested_skills = context.get("strategies", [])
             ctx.meta["skills_requested"] = requested_skills or []
             ctx.meta["strategies_requested"] = requested_skills or []
-            ctx.meta["report_language"] = normalize_report_language(context.get("report_language", "zh"))
+            ctx.meta["report_language"] = normalize_report_language(context.get("report_language", "en"))
             if context.get("market_phase_context"):
                 ctx.meta["market_phase_context"] = context["market_phase_context"]
             daily_market_context = context.get("daily_market_context")
@@ -732,7 +742,7 @@ class AgentOrchestrator:
             ctx.stock_code = _extract_stock_code(task)
 
         if "report_language" not in ctx.meta:
-            ctx.meta["report_language"] = "zh"
+            ctx.meta["report_language"] = "en"
 
         return ctx
 

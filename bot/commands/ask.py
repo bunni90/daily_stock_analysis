@@ -19,6 +19,7 @@ from bot.commands.base import BotCommand
 from bot.models import BotMessage, BotResponse
 from data_provider.base import canonical_stock_code
 from src.config import get_config
+from src.i18n import t as _t
 from src.storage import get_db
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class AskCommand(BotCommand):
 
     @property
     def description(self) -> str:
-        return "使用 Agent 技能分析股票"
+        return _t("bot.ask.desc")
 
     @property
     def usage(self) -> str:
@@ -98,18 +99,18 @@ class AskCommand(BotCommand):
         is_us_stock = re.match(r"^[A-Z]{1,5}(\.[A-Z]{1,2})?$", normalized)
 
         if not (is_a_stock or is_hk_stock or is_us_stock):
-            return f"无效的股票代码: {normalized}（A股6位数字 / 港股HK+5位数字 / 美股1-5个字母）"
+            return _t("bot.analyze.invalid_code", code=normalized)
         return None
 
     def validate_args(self, args: List[str]) -> Optional[str]:
         """Validate arguments."""
         if not args:
-            return "请输入股票代码。用法: /ask <股票代码[,代码2,...]> [技能名称]"
+            return _t("bot.ask.enter_code")
 
         raw_code_str, _ = self._merge_code_args(args)
         codes = self._parse_stock_codes(raw_code_str)
         if not codes:
-            return "请输入至少一个有效的股票代码"
+            return _t("bot.ask.at_least_one")
 
         for code in codes:
             error = self._validate_single_code(code)
@@ -117,7 +118,7 @@ class AskCommand(BotCommand):
                 return error
 
         if len(codes) > 5:
-            return "一次最多分析 5 只股票"
+            return _t("bot.ask.max_stocks")
 
         return None
 
@@ -209,7 +210,7 @@ class AskCommand(BotCommand):
 
         if not config.agent_mode:
             return BotResponse.text_response(
-                "⚠️ Agent 模式未开启，无法使用问股功能。\n请在配置中设置 `AGENT_MODE=true`。"
+                _t("bot.ask.agent_disabled")
             )
 
         raw_code_str, remaining_args = self._merge_code_args(args)
@@ -249,12 +250,12 @@ class AskCommand(BotCommand):
                 skill_name = self._resolve_skill_name(skill_id)
                 header = f"📊 {code} | 技能: {skill_name}\n{'─' * 30}\n"
                 return BotResponse.text_response(header + result.content)
-            return BotResponse.text_response(f"⚠️ 分析失败: {result.error}")
+            return BotResponse.text_response(_t("bot.ask.failed", error=result.error))
 
         except Exception as exc:
             logger.error("Ask command failed: %s", exc)
             logger.exception("Ask error details:")
-            return BotResponse.text_response(f"⚠️ 问股执行出错: {str(exc)}")
+            return BotResponse.text_response(_t("bot.ask.error", error=str(exc)))
 
     def _analyze_multi(
         self,
@@ -309,7 +310,7 @@ class AskCommand(BotCommand):
                         None,
                     )
 
-                error_note = f"[分析失败] {result.error or '未知错误'}"
+                error_note = _t("bot.ask.analysis_failed", error=result.error or _t("bot.ask.unknown_error"))
                 conversation_manager.add_message(session_id, "assistant", error_note)
                 return (stock_code, None, result.error or "未知错误")
             except Exception as exc:
@@ -345,13 +346,13 @@ class AskCommand(BotCommand):
                     except Exception as exc:
                         errors[code] = f"执行异常: {exc}"
                 else:
-                    errors[code] = "分析超时（未在 150 秒内完成）"
+                    errors[code] = _t("bot.ask.timeout_detail")
         finally:
             pool.shutdown(wait=False, cancel_futures=True)
 
         for code in codes:
             if code not in results and code not in errors:
-                errors[code] = "分析超时"
+                errors[code] = _t("bot.ask.timeout")
 
         parts = [f"📊 **多股对比分析** | 技能: {skill_name}", f"{'─' * 30}", ""]
 
@@ -524,22 +525,22 @@ class AskCommand(BotCommand):
         trend = dashboard.get("trend_prediction")
         if isinstance(decision, str):
             lines.append(
-                f"**结论**: {decision}"
-                + (f" | **置信度**: {confidence:.0%}" if isinstance(confidence, (int, float)) else "")
-                + (f" | **趋势**: {trend}" if isinstance(trend, str) and trend.strip() else "")
+                f"**{_t('bot.ask.label_conclusion')}**: {decision}"
+                + (f" | **{_t('bot.ask.label_confidence')}**: {confidence:.0%}" if isinstance(confidence, (int, float)) else "")
+                + (f" | **{_t('bot.ask.label_trend')}**: {trend}" if isinstance(trend, str) and trend.strip() else "")
             )
 
         summary = AskCommand._extract_summary(stock_code, dashboard, raw_content)
         if summary:
-            lines.append(f"**摘要**: {summary}")
+            lines.append(f"**{_t('bot.ask.label_summary')}**: {summary}")
 
         operation = dashboard.get("operation_advice")
         if isinstance(operation, str) and operation.strip():
-            lines.append(f"**操作建议**: {operation.strip()}")
+            lines.append(f"**{_t('bot.ask.label_operation')}**: {operation.strip()}")
 
         risk_warning = dashboard.get("risk_warning")
         if isinstance(risk_warning, str) and risk_warning.strip():
-            lines.append(f"**风险提示**: {risk_warning.strip()}")
+            lines.append(f"**{_t('bot.ask.label_risk')}**: {risk_warning.strip()}")
 
         dashboard_block = dashboard.get("dashboard")
         if not isinstance(dashboard_block, dict):
@@ -555,7 +556,7 @@ class AskCommand(BotCommand):
                 if value:
                     price_parts.append(f"{key}={value}")
             if price_parts:
-                lines.append("**关键点位**: " + " | ".join(price_parts))
+                lines.append(f"**{_t('bot.ask.label_key_points')}**: " + " | ".join(price_parts))
 
         return "\n\n".join(lines) if lines else raw_content[:800]
 
@@ -613,7 +614,7 @@ class AskCommand(BotCommand):
             if not isinstance(assessment, dict):
                 return ""
 
-            lines = ["## 组合视角", ""]
+            lines = [_t("bot.ask.portfolio_section"), ""]
             summary = assessment.get("summary")
             if isinstance(summary, str) and summary.strip():
                 lines.append(summary.strip())

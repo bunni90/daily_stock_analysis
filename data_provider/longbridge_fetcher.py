@@ -180,7 +180,7 @@ def _longbridge_config_kwargs() -> Dict[str, Any]:
         try:
             from src.report_language import normalize_report_language
 
-            rl = normalize_report_language(os.getenv("REPORT_LANGUAGE"), default="zh")
+            rl = normalize_report_language(os.getenv("REPORT_LANGUAGE"), default="en")
             if rl == "zh":
                 kw["language"] = Language.ZH_CN
             elif rl == "en":

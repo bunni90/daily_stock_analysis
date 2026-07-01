@@ -3,7 +3,9 @@
 
 name: shrink_pullback
 display_name: 缩量回踩
+display_name_en: "Shrinking Pullback"
 description: 检测缩量回踩均线支撑信号，趋势延续的理想入场点。
+description_en: "Detects shrinking volume pullback to moving average support. Ideal entry point for trend continuation."
 category: trend
 core_rules: [1, 2, 4]
 required_tools:
@@ -44,3 +46,33 @@ instructions: |
   - 理想买点设在 MA5 水平，次优买点设在 MA10。
   - 止损设在 MA20 水平。
   - 在 `buy_reason` 中注明"缩量回踩"。
+
+instructions_en: |
+  **Shrink Volume Pullback Strategy**
+
+  Entry Determination Criteria:
+
+  1. **Prerequisites** (related concept 2: trend trading):
+     - Stock must be in an uptrend (MA5 > MA10 > MA20).
+     - Use `analyze_trend` to confirm bullish alignment.
+
+  2. **Pullback Detection** (related concept 4: entry point preference):
+     - Use `get_daily_history` and `get_realtime_quote`.
+     - Price pulls back near MA5 (within 1%) or near MA10 (within 2%).
+     - Volume during pullback < 70% of 5-day average volume (shrinking volume characteristic).
+     - `analyze_trend` → volume_status should show shrinking volume.
+
+  3. **Bounce Signal** (related concept 1: strict entry strategy):
+     - Current price holds above MA support level.
+     - MA5 deviation rate < 2% — optimal buy zone.
+
+  4. **Confirmation Conditions** (related concept 5: risk screening):
+     - `search_stock_news` shows no negative news.
+     - Chip distribution healthy (profit ratio 50-80%).
+
+  Scoring Adjustments:
+  - Shrink-pullback to MA5: sentiment_score +10
+  - Shrink-pullback to MA10 with volume < 0.6x average: sentiment_score +8
+  - Ideal entry point set at MA5 level, secondary entry point at MA10.
+  - Stop-loss set at MA20 level.
+  - Note "Shrink-pullback" in `buy_reason`.

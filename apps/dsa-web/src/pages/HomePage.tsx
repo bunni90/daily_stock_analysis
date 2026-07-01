@@ -19,6 +19,7 @@ import { TaskPanel } from '../components/tasks';
 import { useDashboardLifecycle, useHomeDashboardState } from '../hooks';
 import { useWatchlist } from '../hooks/useWatchlist';
 import { useUiLanguage } from '../contexts/UiLanguageContext';
+import type { UiTextKey } from '../i18n/uiText';
 import type { SetupStatusResponse } from '../types/systemConfig';
 import { normalizeReportLanguage } from '../utils/reportLanguage';
 import type { MarketReviewPayload, StockBarItem, TaskInfo } from '../types/analysis';
@@ -191,7 +192,7 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    agentApi.getSkills()
+    agentApi.getSkills(uiLanguage)
       .then((response) => {
         if (active) {
           setAnalysisSkills(response.skills);
@@ -353,9 +354,14 @@ const HomePage: React.FC = () => {
     }
     const requiredNeedsAction = setupStatus.checks
       .filter((check) => check.required && check.status === 'needs_action')
-      .map((check) => check.title);
+      .map((check) => {
+        if (check.titleKey && check.titleKey.startsWith('settings.setupCheck.')) {
+          try { return t(check.titleKey as UiTextKey); } catch { /* fall through */ }
+        }
+        return check.title;
+      });
     return requiredNeedsAction.slice(0, 3).join(uiLanguage === 'en' ? ', ' : '、');
-  }, [setupStatus, uiLanguage]);
+  }, [setupStatus, uiLanguage, t]);
 
   useDashboardLifecycle({
     loadInitialHistory,

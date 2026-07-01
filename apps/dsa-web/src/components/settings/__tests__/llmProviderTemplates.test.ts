@@ -5,6 +5,7 @@ import {
   LLM_PROVIDER_TEMPLATES,
   MODEL_PLACEHOLDERS_BY_PROTOCOL,
   getProviderTemplate,
+  getProviderTemplateById,
   isKnownProviderTemplate,
 } from '../llmProviderTemplates';
 
@@ -68,19 +69,30 @@ describe('llmProviderTemplates', () => {
 
   it('uses volcengine as the default Volcengine Ark provider id', () => {
     expect(LLM_PROVIDER_TEMPLATE_BY_ID.volcengine).toMatchObject({
-      label: '火山方舟（豆包）',
       protocol: 'openai',
       baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
       placeholderModels: 'doubao-seed-1-6-251015,doubao-seed-1-6-thinking-251015',
-      configHint: '确认在线推理 endpoint / region 与 Coding Plan 专用入口不要混用。',
     });
+    expect(LLM_PROVIDER_TEMPLATE_BY_ID.volcengine.label).toBe('settings.llm.template.provider.volcengine');
+    expect(LLM_PROVIDER_TEMPLATE_BY_ID.volcengine.configHint).toBe('settings.llm.template.provider.volcengineHint');
     expect(LLM_PROVIDER_TEMPLATE_BY_ID.ark).toBeUndefined();
   });
 
+  it('returns i18n-resolved labels via getProviderTemplateById with a t function', () => {
+    const zh: Record<string, string> = {
+      'settings.llm.template.provider.volcengine': '火山方舟（豆包）',
+      'settings.llm.template.provider.volcengineHint': '确认在线推理 endpoint / region 与 Coding Plan 专用入口不要混用。',
+    };
+    const t = (key: string) => zh[key] ?? key;
+    const volcengine = getProviderTemplateById('volcengine', t);
+    expect(volcengine?.label).toBe('火山方舟（豆包）');
+    expect(volcengine?.configHint).toBe('确认在线推理 endpoint / region 与 Coding Plan 专用入口不要混用。');
+  });
+
   it('keeps focused config hints on providers with common setup pitfalls', () => {
-    expect(LLM_PROVIDER_TEMPLATE_BY_ID.ollama.configHint).toContain('Ollama 服务');
-    expect(LLM_PROVIDER_TEMPLATE_BY_ID.siliconflow.configHint).toContain('API Key');
-    expect(LLM_PROVIDER_TEMPLATE_BY_ID.openrouter.configHint).toContain('API Key');
+    expect(LLM_PROVIDER_TEMPLATE_BY_ID.ollama.configHint).toBe('settings.llm.template.provider.ollamaHint');
+    expect(LLM_PROVIDER_TEMPLATE_BY_ID.siliconflow.configHint).toBe('settings.llm.template.provider.siliconflowHint');
+    expect(LLM_PROVIDER_TEMPLATE_BY_ID.openrouter.configHint).toBe('settings.llm.template.provider.openrouterHint');
     expect(LLM_PROVIDER_TEMPLATE_BY_ID.openai.configHint).toBeUndefined();
   });
 

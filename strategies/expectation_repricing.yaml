@@ -2,7 +2,9 @@
 
 name: expectation_repricing
 display_name: 预期重估
+display_name_en: "Expectation Repricing"
 description: 分析业绩预期、政策预期和估值预期的变化，寻找预期差修复或预期过热后的回落风险。
+description_en: "Analyzes changes in earnings, policy, and valuation expectations. Finds expectation gap repair or overheating reversal risks."
 category: framework
 core_rules: [3, 5, 6]
 required_tools:
@@ -52,3 +54,42 @@ instructions: |
   - 正向预期差已被连续大涨兑现：`sentiment_score -5`
   - 负向预期差或核心假设被证伪：`sentiment_score -15`
   - 信息不充分但存在潜在修复：维持中性并降低置信度
+
+instructions_en: |
+  **Expectation Repricing Strategy**
+
+  Applicable Scenarios:
+  - Market expectations are changing regarding the company's earnings, policy, industry prosperity, valuation center, or competitive landscape.
+  - Need to determine whether the current price reflects "expectation repair," "expectation disappointment," or "expectation overheating."
+
+  Analysis Framework:
+
+  1. **Expectation Source**
+     - Use `search_stock_news` to identify recent information that changed market expectations: earnings pre-announcements, institutional views, orders, policy, product progress, industry data.
+     - Distinguish between hard information (announcements, financial reports, orders) and soft information (rumors, opinions, sentiment).
+
+  2. **Expectation Gap Direction**
+     - Positive expectation gap: Market was previously pessimistic, new information shows business or earnings better than expected.
+     - Negative expectation gap: Market was previously optimistic, new information falls below expectations or verification fails.
+     - If information has already been fully reflected by consecutive large gains, alert on expectation realization risk.
+
+  3. **Valuation Repricing**
+     - Use PE/PB, market cap, ROE, cash flow and other fields to judge whether valuation repricing is supported by fundamentals.
+     - Valuation uplift needs to match earnings quality, growth sustainability, and industry space.
+     - When valuation retreats, observe whether it's caused by one-off disturbances or long-term thesis changes.
+
+  4. **Price Confirmation**
+     - Use `analyze_trend` to determine if expectation changes have translated into a trend.
+     - Volume breakout can be viewed as expectations confirmed by capital; shrinking volume bounce is more of a repair observation.
+     - Volume expansion with price stagnation at highs, positive news without price rise, or breaking below key support may indicate weakening expectations.
+
+  Output Requirements:
+  - Clearly state the current situation: Positive expectation gap / Expectation realized / Negative expectation gap / Unclear expectations.
+  - Explain which information changed market expectations and which remains to be verified.
+  - Provide observation points: next earnings report, order realization, policy implementation, valuation retreat, or technical confirmation.
+
+  Scoring Adjustment Suggestions:
+  - Positive expectation gap with price not yet fully reflected: `sentiment_score +15`
+  - Positive expectation gap already realized through consecutive large gains: `sentiment_score -5`
+  - Negative expectation gap or core assumptions disproven: `sentiment_score -15`
+  - Insufficient information but potential repair exists: maintain neutral and lower confidence

@@ -1,4 +1,5 @@
 import type { AnalysisReport } from '../types/analysis';
+import type { UiLanguage } from '../i18n/uiText';
 import { historyApi } from '../api/history';
 import { validateStockCode } from './validation';
 
@@ -64,8 +65,11 @@ export function parseFollowUpRecordId(recordId: string | null): number | undefin
   return parsed;
 }
 
-export function buildFollowUpPrompt(stockCode: string, stockName: string | null): string {
+export function buildFollowUpPrompt(stockCode: string, stockName: string | null, language: UiLanguage = 'en'): string {
   const displayName = stockName ? `${stockName}(${stockCode})` : stockCode;
+  if (language === 'en') {
+    return `Please analyze ${displayName} in depth`;
+  }
   return `请深入分析 ${displayName}`;
 }
 

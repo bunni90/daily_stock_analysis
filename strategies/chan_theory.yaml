@@ -3,7 +3,9 @@
 
 name: chan_theory
 display_name: 缠论
+display_name_en: "Chan Theory"
 description: 基于缠论笔、线段、中枢结构，判断趋势级别、买卖点与背驰信号。
+description_en: "Based on Chan Theory strokes, segments, and pivot structures. Judges trend levels, buy/sell points, and divergence signals."
 category: framework
 core_rules: [1, 2, 3, 4]
 required_tools:
@@ -56,3 +58,46 @@ instructions: |
   - 二买/三买共振：`sentiment_score +10`
   - 中枢震荡无明确方向：`sentiment_score 维持基准`
   - 顶背驰 / 趋势向下：`sentiment_score -15`
+
+instructions_en: |
+  **Chan Theory / Zen Channel Theory**
+
+  Core Framework: Fractal → Pen → Stroke → Segment → Pivot → Trend
+
+  ## Analysis Steps
+
+  ### 1. Price Structure Assessment (Pivot Identification)
+  - Use `get_daily_history` to get 60 days of daily data.
+  - Identify recent price high-low point sequences and determine whether the current state is
+    **oscillating pivot** (1+ pivots) or **trend segment** (departing pivot upward/downward).
+  - Pivot: Overlap zone of 3 consecutive price swings, price oscillates within this range.
+  - Trend: 3 consecutive same-level pivots all moving in the same direction.
+
+  ### 2. Divergence Judgment (Highest Priority Signal)
+  - **Top Divergence**: Price makes new high but MACD red bar area shrinks → sell/reduce signal.
+  - **Bottom Divergence**: Price makes new low but MACD green bar area shrinks → buy/add signal.
+  - Use `analyze_trend` to get MACD data and compare with price high-low points.
+
+  ### 3. Buy/Sell Point Determination
+  - **First Buy** (strongest): In downtrend, bottom divergence appears at the last pivot.
+  - **Second Buy**: First pullback after leaving the downside pivot does not break the pivot high.
+  - **Third Buy**: Upward breakout after pivot oscillation (does not re-enter the pivot).
+  - **First Sell / Second Sell / Third Sell**: Symmetrical structure, opposite direction.
+  - The buy/sell point level at the current price determines position size.
+
+  ### 4. Level & Position Sizing
+  - Daily-level buy/sell points can use moderate positions (30-50%).
+  - Weekly-level buy/sell points can use larger positions (50-80%).
+  - Multi-level resonance (daily + weekly same direction) produces the strongest signal.
+
+  ### 5. Output Requirements
+  - Clearly state the current state: uptrend / downtrend / pivot oscillation.
+  - Indicate whether divergence signals exist and at what level.
+  - Provide the current buy/sell point type (First Buy / Second Buy / Third Buy, etc.), or write "no clear buy/sell point" if none.
+  - Stop-loss set at prior low (for buys) or prior high (for sells).
+
+  Scoring Adjustment Suggestions:
+  - Bottom divergence + First Buy signal: `sentiment_score +15`
+  - Second Buy / Third Buy resonance: `sentiment_score +10`
+  - Pivot oscillation with no clear direction: `sentiment_score maintained at baseline`
+  - Top divergence / trend downward: `sentiment_score -15`

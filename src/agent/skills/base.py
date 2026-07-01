@@ -17,7 +17,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+from src.report_language import normalize_report_language
+from src.i18n import t as _t
+
 logger = logging.getLogger(__name__)
+
+
+def _is_en_language() -> bool:
+    return normalize_report_language(os.getenv("REPORT_LANGUAGE")) == "en"
 
 # Built-in skill YAML directory (project_root/strategies/ kept for compatibility)
 _BUILTIN_SKILLS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "strategies"
@@ -59,6 +66,9 @@ class Skill:
     display_name: str
     description: str
     instructions: str
+    display_name_en: str = ""
+    description_en: str = ""
+    instructions_en: str = ""
     category: str = "trend"
     core_rules: List[int] = field(default_factory=list)
     required_tools: List[str] = field(default_factory=list)
@@ -178,6 +188,9 @@ def load_skill_from_yaml(filepath: Union[str, Path]) -> Skill:
         display_name=str(data["display_name"]).strip(),
         description=str(data["description"]).strip(),
         instructions=str(data["instructions"]).strip(),
+        display_name_en=str(data.get("display_name_en", "")).strip(),
+        description_en=str(data.get("description_en", "")).strip(),
+        instructions_en=str(data.get("instructions_en", "")).strip(),
         category=str(data.get("category", "trend")).strip(),
         core_rules=data.get("core_rules", []) or [],
         required_tools=data.get("required_tools", []) or [],
@@ -430,18 +443,19 @@ class SkillManager:
         activated = [s.name for s in self._skills.values() if s.enabled]
         logger.info(f"Activated skills: {activated}")
 
-    def get_skill_instructions(self) -> str:
+    def get_skill_instructions(self, *, report_language: str = "en") -> str:
         """Generate combined instruction text for all active skills.
 
         Returns a formatted string ready to be injected into the agent
         system prompt, organized by category.
         """
+        is_en = normalize_report_language(report_language) == "en"
         active = self.list_active_skills()
         if not active:
             return ""
 
         # Group by category
-        categories = {"trend": "趋势", "pattern": "形态", "reversal": "反转", "framework": "框架"}
+        categories = {"trend": _t("skill.category.trend", language=report_language), "pattern": _t("skill.category.pattern", language=report_language), "reversal": _t("skill.category.reversal", language=report_language), "framework": _t("skill.category.framework", language=report_language)}
         grouped: Dict[str, List[Skill]] = {}
         for skill in active:
             cat = skill.category or "trend"
@@ -456,18 +470,24 @@ class SkillManager:
             if not skills_in_cat:
                 continue
             cat_label = categories.get(cat_key, cat_key)
-            parts.append(f"#### {cat_label}类技能\n")
+            parts.append(f"#### {cat_label}{_t('skill.type_suffix', language=report_language)}\n")
             for skill in skills_in_cat:
                 rules_ref = ""
                 if skill.core_rules:
-                    rules_ref = f"（关联核心理念：第{'、'.join(str(r) for r in skill.core_rules)}条）"
+                    if is_en:
+                        rules_ref = f" ({_t('skill.rule_ref', language=report_language)}{', '.join(str(r) for r in skill.core_rules)} rules)"
+                    else:
+                        rules_ref = f"（{_t('skill.rule_ref', language=report_language)}{'、'.join(str(r) for r in skill.core_rules)}条）"
                 support_ref = ""
                 if skill.bundle_dir and skill.entrypoint.endswith("SKILL.md"):
-                    support_ref = "（bundle）"
+                    support_ref = " (bundle)" if is_en else "（bundle）"
+                skill_display = (skill.display_name_en or skill.display_name) if is_en else skill.display_name
+                skill_desc = (skill.description_en or skill.description) if is_en else skill.description
+                skill_instr = (skill.instructions_en or skill.instructions) if is_en else skill.instructions
                 parts.append(
-                    f"### 技能 {idx}: {skill.display_name} {rules_ref}{support_ref}\n\n"
-                    f"**适用场景**: {skill.description}\n\n"
-                    f"{skill.instructions}\n"
+                    f"### {cat_label} {idx}: {skill_display} {rules_ref}{support_ref}\n\n"
+                    f"**{_t('skill.applicable_scenario', language=report_language)}**: {skill_desc}\n\n"
+                    f"{skill_instr}\n"
                 )
                 idx += 1
 

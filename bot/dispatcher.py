@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Type, Callable
 
 from bot.models import BotMessage, BotResponse
 from bot.commands.base import BotCommand
+from src.i18n import t as _t
 
 logger = logging.getLogger(__name__)
 
@@ -256,14 +257,14 @@ class CommandDispatcher:
         if "error" in error_holder:
             raise error_holder["error"]
 
-        return result_holder.get("response", BotResponse.error_response("命令执行失败"))
+        return result_holder.get("response", BotResponse.error_response(_t("bot.command_failed")))
 
     def _prepare_dispatch(self, message: BotMessage) -> tuple[Optional[str], List[str], Optional[BotCommand], Optional[BotResponse]]:
         """Run shared dispatch pre-checks for sync/async entrypoints."""
         if not self._rate_limiter.is_allowed(message.user_id):
             remaining_time = self._rate_limiter.window_seconds
             return None, [], None, BotResponse.error_response(
-                f"请求过于频繁，请 {remaining_time} 秒后再试"
+                _t("bot.rate_limit", time=remaining_time)
             )
 
         cmd_name, args = message.get_command_and_args(self.command_prefix)
@@ -275,12 +276,12 @@ class CommandDispatcher:
         command = self.get_command(cmd_name)
         if command is None:
             return cmd_name, args, None, BotResponse.error_response(
-                f"未知命令: {cmd_name}\n"
-                f"发送 `{self.command_prefix}help` 查看可用命令。"
+                _t("bot.unknown_command", cmd=cmd_name) + "\n"
+                + _t("bot.available_commands_hint", prefix=self.command_prefix)
             )
 
         if command.admin_only and not self.is_admin(message.user_id):
-            return cmd_name, args, None, BotResponse.error_response("此命令需要管理员权限")
+            return cmd_name, args, None, BotResponse.error_response(_t("bot.admin_required"))
 
         error_msg = command.validate_args(args)
         if error_msg:
@@ -302,13 +303,12 @@ class CommandDispatcher:
                 return nl_result
             if message.mentioned:
                 return BotResponse.text_response(
-                    "你好！我是股票分析助手。\n"
-                    f"发送 `{self.command_prefix}help` 查看可用命令。"
+                    _t("bot.greeting", prefix=self.command_prefix)
                 )
             return BotResponse.text_response("")
 
         if command is None:
-            return BotResponse.error_response("命令执行失败")
+            return BotResponse.error_response(_t("bot.command_failed"))
 
         try:
             response = command.execute(message, args)
@@ -317,7 +317,7 @@ class CommandDispatcher:
         except Exception as e:
             logger.error(f"[Dispatcher] 命令 {cmd_name} 执行失败: {e}")
             logger.exception(e)
-            return BotResponse.error_response(f"命令执行失败: {str(e)[:100]}")
+            return BotResponse.error_response(_t("bot.command_error", error=str(e)[:100]))
 
     async def dispatch_async(self, message: BotMessage) -> BotResponse:
         """
@@ -341,14 +341,13 @@ class CommandDispatcher:
             # No NL match — check if @mentioned for a help hint
             if message.mentioned:
                 return BotResponse.text_response(
-                    "你好！我是股票分析助手。\n"
-                    f"发送 `{self.command_prefix}help` 查看可用命令。"
+                    _t("bot.greeting", prefix=self.command_prefix)
                 )
             # 非命令消息，不处理
             return BotResponse.text_response("")
 
         if command is None:
-            return BotResponse.error_response("命令执行失败")
+            return BotResponse.error_response(_t("bot.command_failed"))
 
         # 6. 执行命令
         try:
@@ -358,7 +357,7 @@ class CommandDispatcher:
         except Exception as e:
             logger.error(f"[Dispatcher] 命令 {cmd_name} 执行失败: {e}")
             logger.exception(e)
-            return BotResponse.error_response(f"命令执行失败: {str(e)[:100]}")
+            return BotResponse.error_response(_t("bot.command_error", error=str(e)[:100]))
 
     def set_help_command_getter(self, getter: Callable) -> None:
         """

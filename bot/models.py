@@ -143,8 +143,8 @@ class BotResponse:
     
     @classmethod
     def error_response(cls, message: str) -> 'BotResponse':
-        """创建错误响应"""
-        return cls(text=f"❌ 错误：{message}", markdown=False, at_user=True)
+        from src.i18n import t as _t
+        return cls(text=f"❌ {_t('bot.command_failed')}: {message}", markdown=False, at_user=True)
 
 
 @dataclass

@@ -301,6 +301,30 @@ const MARKET_REVIEW_TEXT: Record<ReportLanguage, {
   },
 };
 
+const INDEX_NAME_EN: Record<string, string> = {
+  '标普500指数': 'S&P 500',
+  '道琼斯工业指数': 'Dow Jones Industrial',
+  '纳斯达克综合指数': 'NASDAQ Composite',
+  '纳斯达克100指数': 'NASDAQ 100',
+  'VIX恐慌指数': 'VIX Fear Index',
+  '罗素2000指数': 'Russell 2000',
+  '上证指数': 'SSE Composite',
+  '深证成指': 'SZSE Component',
+  '创业板指': 'ChiNext',
+  '科创50': 'STAR 50',
+  '上证50': 'SSE 50',
+  '沪深300': 'CSI 300',
+  '恒生指数': 'Hang Seng Index',
+  '恒生科技指数': 'Hang Seng TECH',
+  '国企指数': 'Hang Seng CEI',
+  '日经225': 'Nikkei 225',
+  'KOSPI': 'KOSPI',
+  'KOSDAQ': 'KOSDAQ',
+};
+
+const translateIndexName = (name: string, lang: string): string =>
+  lang === 'en' ? (INDEX_NAME_EN[name] ?? name) : name;
+
 const formatRankingChange = (value: unknown): string => {
   const numeric = typeof value === 'number' ? value : Number(String(value ?? '').replace(/%$/, ''));
   if (!Number.isFinite(numeric)) {
@@ -570,7 +594,7 @@ export const MarketReviewReportView: React.FC<MarketReviewReportViewProps> = ({
                       <tbody className="divide-y divide-subtle">
                         {marketData.indices.map((index) => (
                           <tr key={index.code || index.name}>
-                            <td className="px-2 py-2 font-medium text-foreground">{index.name}</td>
+                            <td className="px-2 py-2 font-medium text-foreground">{translateIndexName(index.name, normalizedReportLanguage)}</td>
                             <td className="px-2 py-2 text-secondary-text">{index.current ?? '-'}</td>
                             <td className="px-2 py-2 text-secondary-text">{index.changePct !== undefined ? `${index.changePct}%` : '-'}</td>
                             <td className="px-2 py-2 text-secondary-text">{index.high ?? '-'} / {index.low ?? '-'}</td>

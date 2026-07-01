@@ -349,7 +349,7 @@ def normalize_decision_action(value: Any) -> Optional[DecisionAction]:
     return None
 
 
-def localize_action_label(action: Any, language: Optional[str] = "zh") -> Optional[str]:
+def localize_action_label(action: Any, language: Optional[str] = "en") -> Optional[str]:
     """Return a localized display label for a decision action."""
 
     normalized = _explicit_action(action)
@@ -363,7 +363,7 @@ def build_action_fields(
     operation_advice: Any = None,
     explicit_action: Any = None,
     report_type: Any = None,
-    report_language: Optional[str] = "zh",
+    report_language: Optional[str] = "en",
 ) -> DecisionActionFields:
     """Build optional public action fields without mutating legacy contracts."""
 

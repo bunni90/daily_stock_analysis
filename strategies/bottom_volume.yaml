@@ -3,7 +3,9 @@
 
 name: bottom_volume
 display_name: 底部放量
+display_name_en: "Bottom Volume Surge"
 description: 检测长期下跌后底部放量信号，潜在趋势反转信号。
+description_en: "Detects volume surge after prolonged decline. Potential trend reversal signal."
 category: reversal
 core_rules: [2, 5]
 required_tools:
@@ -47,3 +49,38 @@ instructions: |
   - 配合阳线 + 新闻催化：额外 +5
   - 在 `buy_reason` 和 `pattern_analysis` 中注明"底部放量"。
   - 止损设在近期低点。
+
+instructions_en: |
+  **Bottom Volume Surge Strategy**
+
+  Reversal Determination Criteria:
+
+  1. **Sustained Decline Confirmation**:
+     - Use `get_daily_history` (30 days).
+     - Stock price decline from 20-day high to recent low > 15%.
+     - `analyze_trend` → trend_status should be BEAR or STRONG_BEAR.
+
+  2. **Volume Anomaly**:
+     - Daily volume > 3x the 5-day average volume.
+     - Use `get_realtime_quote` → volume_ratio > 3.0.
+     - The anomaly should appear after a period of extreme volume shrinkage.
+
+  3. **Price Stabilization**:
+     - Daily candle closes bullish (close > open).
+     - Price holds above recent lows.
+     - Preferably shows a long lower shadow, indicating buyer support.
+
+  4. **Confirmation Factors** (related concept 5: risk screening):
+     - Confirm via `search_stock_news` whether there is fundamental catalyst.
+     - Chip distribution: average cost near current price (cost convergence).
+
+  5. **Risk Warning** (related concept 2: trend trading):
+     - This is a reversal signal, higher risk than trend following.
+     - Position size recommendation smaller (maximum 20-30%).
+     - Stop-loss must be strict (set below recent lows).
+
+  Scoring Adjustments:
+  - Bottom volume surge confirmed: sentiment_score +8
+  - With bullish candle + news catalyst: additional +5
+  - Note "Bottom volume surge" in `buy_reason` and `pattern_analysis`.
+  - Stop-loss set at recent lows.

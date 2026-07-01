@@ -2,7 +2,9 @@
 
 name: growth_quality
 display_name: 成长质量
+display_name_en: "Growth Quality"
 description: 结合收入利润增长、ROE、现金流和行业空间，识别高质量成长股与成长失速风险。
+description_en: "Combines revenue/profit growth, ROE, cash flow, and industry space to identify high-quality growth stocks and growth deceleration risks."
 category: framework
 core_rules: [2, 3, 5]
 required_tools:
@@ -52,3 +54,42 @@ instructions: |
   - 行业景气与公司新闻互相验证：额外 `+6`
   - 高估值但成长未验证：`sentiment_score -8`
   - 增收不增利或现金流恶化：`sentiment_score -12`
+
+instructions_en: |
+  **Growth Quality Strategy**
+
+  Applicable Scenarios:
+  - Focusing on the company's medium-to-long-term growth capability, not just short-term technical patterns.
+  - Suitable for high-prosperity industries, companies with continuously improving earnings, or those in business model expansion phases.
+
+  Analysis Framework:
+
+  1. **Growth**
+     - Prioritize reviewing financial report fields for revenue, net profit attributable to parent, operating cash flow, and ROE.
+     - Determine if revenue growth and profit growth are aligned; check for "revenue growth without profit growth."
+     - If only concept hype exists without financial report verification, lower growth certainty.
+
+  2. **Quality**
+     - Higher and stable ROE indicates better quality.
+     - Operating cash flow aligned with net profit direction means earnings quality is more reliable.
+     - When cash flow significantly lags profit, flag collection, inventory, or receivables risk.
+
+  3. **Valuation Tolerance**
+     - Use PE/PB, market cap and other valuation fields to judge whether the market has already front-loaded the growth.
+     - High growth can sustain higher valuations, but must explain whether growth can cover the valuation.
+     - High valuation with slowing growth should significantly lower the score.
+
+  4. **Trend Confirmation**
+     - Use `analyze_trend` to determine if the long-term growth thesis is confirmed by market capital.
+     - When fundamentals are improving but technicals are unconfirmed, prioritize providing observation conditions rather than directly chasing buys.
+
+  Output Requirements:
+  - Clearly state the company's status: High-quality growth / Growth under verification / Growth slowing / Growth disproven.
+  - Explain whether growth comes from revenue expansion, margin improvement, industry prosperity, or one-off factors.
+  - Provide suitable entry points for growth stocks: post-earnings breakout, pullback to long-term MA, or valuation retreat.
+
+  Scoring Adjustment Suggestions:
+  - Revenue, profit, cash flow, and ROE all improving in sync: `sentiment_score +15`
+  - Industry prosperity and company news mutually verified: additional `+6`
+  - High valuation but growth unverified: `sentiment_score -8`
+  - Revenue growth without profit growth or deteriorating cash flow: `sentiment_score -12`

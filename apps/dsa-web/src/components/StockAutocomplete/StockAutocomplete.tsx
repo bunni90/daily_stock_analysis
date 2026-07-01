@@ -11,6 +11,7 @@ import type { ErrorInfo, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useStockIndex } from '../../hooks/useStockIndex';
 import { useAutocomplete } from '../../hooks/useAutocomplete';
+import { useUiLanguage } from '../../contexts/UiLanguageContext';
 import { SuggestionsList } from './SuggestionsList';
 import { cn } from '../../utils/cn';
 
@@ -37,9 +38,11 @@ function FallbackInput({
   onChange,
   onSubmit,
   disabled = false,
-  placeholder = '输入股票代码或名称',
+  placeholder,
   className,
 }: StockAutocompleteProps) {
+  const { t } = useUiLanguage();
+  const _placeholder = placeholder ?? t('home.searchPlaceholder');
   return (
     <input
       type="text"
@@ -50,7 +53,7 @@ function FallbackInput({
           onSubmit(value);
         }
       }}
-      placeholder={placeholder}
+      placeholder={_placeholder}
       disabled={disabled}
       className={cn(AUTOCOMPLETE_INPUT_CLASS, className)}
       data-autocomplete-mode="fallback"
@@ -96,9 +99,12 @@ function StockAutocompleteInner({
   onChange,
   onSubmit,
   disabled = false,
-  placeholder = '输入股票代码或名称',
+  placeholder,
   className,
 }: StockAutocompleteProps) {
+  const { t } = useUiLanguage();
+  const defaultPlaceholder = t('home.searchPlaceholder');
+  const _placeholder = placeholder ?? defaultPlaceholder;
   const { index, loading, fallback } = useStockIndex();
   const {
     // query,
@@ -229,7 +235,7 @@ function StockAutocompleteInner({
         onChange={onChange}
         onSubmit={onSubmit}
         disabled={disabled}
-        placeholder={placeholder}
+        placeholder={_placeholder}
         className={className}
       />
     );
@@ -251,7 +257,7 @@ function StockAutocompleteInner({
           }
         }}
         onBlur={handleBlur}
-        placeholder={placeholder}
+        placeholder={_placeholder}
         disabled={disabled}
         className={cn(
           AUTOCOMPLETE_INPUT_CLASS,

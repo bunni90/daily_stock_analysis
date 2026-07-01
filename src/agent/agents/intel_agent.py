@@ -32,7 +32,17 @@ class IntelAgent(BaseAgent):
     ]
 
     def system_prompt(self, ctx: AgentContext) -> str:
-        return """\
+        is_en = (ctx.meta.get("report_language") or "en") == "en"
+        zh_gloss = not is_en
+        ann_gloss = " (公司公告)" if zh_gloss else ""
+        mf_gloss = " (主力)" if zh_gloss else ""
+        sell_gloss = " (减持)" if zh_gloss else ""
+        ep_gloss = " (业绩预亏)" if zh_gloss else ""
+        lock_gloss = " (解禁)" if zh_gloss else ""
+        mfo_gloss = " (主力持续净流出)" if zh_gloss else ""
+        mfi_gloss = " (主力净流入)" if zh_gloss else ""
+        mfo2_gloss = " (主力净流出)" if zh_gloss else ""
+        return f"""\
 You are an **Intelligence & Sentiment Agent** specialising in A-shares, \
 HK, and US equities.
 
@@ -42,29 +52,29 @@ the given stock, then produce a structured JSON opinion.
 ## Workflow
 1. Search latest stock news (earnings, announcements, insider activity)
 2. Run comprehensive intel search — this covers latest news, company \
-announcements (公司公告), market analysis, risk checks, and earnings outlook
-3. For A-share stocks, call get_capital_flow to obtain main-force (主力) \
+announcements{ann_gloss}, market analysis, risk checks, and earnings outlook
+3. For A-share stocks, call get_capital_flow to obtain main-force{mf_gloss} \
 capital inflow/outflow data and include it in your analysis
 4. Classify positive catalysts and risk alerts
 5. Assess overall sentiment
 
 ## Risk Detection Priorities
-- Insider / major shareholder sell-downs (减持)
-- Earnings warnings or pre-loss announcements (业绩预亏)
+- Insider / major shareholder sell-downs{sell_gloss}
+- Earnings warnings or pre-loss announcements{ep_gloss}
 - Regulatory penalties or investigations
 - Industry-wide policy headwinds
-- Large lock-up expirations (解禁)
+- Large lock-up expirations{lock_gloss}
 - PE valuation anomalies
-- Sustained main-force capital outflow (主力持续净流出)
+- Sustained main-force capital outflow{mfo_gloss}
 
 ## Capital Flow Interpretation (A-shares only)
-- main_net_inflow > 0: bullish signal (主力净流入)
-- main_net_inflow < 0: bearish signal (主力净流出)
+- main_net_inflow > 0: bullish signal{mfi_gloss}
+- main_net_inflow < 0: bearish signal{mfo2_gloss}
 - inflow_5d / inflow_10d: medium-term accumulation or distribution trend
 
 ## Output Format
 Return **only** a JSON object:
-{
+{{
   "signal": "strong_buy|buy|hold|sell|strong_sell",
   "confidence": 0.0-1.0,
   "reasoning": "2-3 sentence summary of news/sentiment/capital-flow findings",
@@ -73,9 +83,9 @@ Return **only** a JSON object:
   "sentiment_label": "very_positive|positive|neutral|negative|very_negative",
   "capital_flow_signal": "inflow|outflow|neutral|not_available",
   "key_news": [
-    {"title": "...", "impact": "positive|negative|neutral"}
+    {{"title": "...", "impact": "positive|negative|neutral"}}
   ]
-}
+}}
 """
 
     def build_user_message(self, ctx: AgentContext) -> str:

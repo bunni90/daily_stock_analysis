@@ -109,6 +109,10 @@ class SetupStatusCheck(BaseModel):
     status: Literal["configured", "inherited", "optional", "needs_action"]
     message: str
     next_step: Optional[str] = None
+    title_key: Optional[str] = None
+    message_key: Optional[str] = None
+    next_step_key: Optional[str] = None
+    message_params: Optional[Dict[str, str]] = None
 
 
 class SetupStatusResponse(BaseModel):

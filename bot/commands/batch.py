@@ -14,6 +14,7 @@ from typing import List
 
 from bot.commands.base import BotCommand
 from bot.models import BotMessage, BotResponse
+from src.i18n import t as _t
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class BatchCommand(BotCommand):
     
     @property
     def description(self) -> str:
-        return "批量分析自选股"
+        return _t("bot.batch.desc")
     
     @property
     def usage(self) -> str:
@@ -61,7 +62,7 @@ class BatchCommand(BotCommand):
         
         if not stock_list:
             return BotResponse.error_response(
-                "自选股列表为空，请先配置 STOCK_LIST"
+                _t("bot.batch.empty")
             )
         
         # 解析数量参数
@@ -70,9 +71,9 @@ class BatchCommand(BotCommand):
             try:
                 limit = int(args[0])
                 if limit <= 0:
-                    return BotResponse.error_response("数量必须大于0")
+                    return BotResponse.error_response(_t("bot.batch.invalid_count"))
             except ValueError:
-                return BotResponse.error_response(f"无效的数量: {args[0]}")
+                return BotResponse.error_response(_t("bot.batch.invalid_number", count=args[0]))
         
         # 限制分析数量
         if limit:
@@ -89,11 +90,10 @@ class BatchCommand(BotCommand):
         thread.start()
         
         return BotResponse.markdown_response(
-            f"✅ **批量分析任务已启动**\n\n"
-            f"• 分析数量: {len(stock_list)} 只\n"
-            f"• 股票列表: {', '.join(stock_list[:5])}"
-            f"{'...' if len(stock_list) > 5 else ''}\n\n"
-            f"分析完成后将自动推送汇总报告。"
+            f"{_t('bot.batch.started')}\n\n"
+            f"• {_t('bot.batch.count', count=len(stock_list))}\n"
+            f"• {_t('bot.batch.list', list=', '.join(stock_list[:5]) + ('...' if len(stock_list) > 5 else ''))}\n\n"
+            f"{_t('bot.batch.will_notify')}"
         )
     
     def _run_batch_analysis(self, stock_list: List[str], message: BotMessage) -> None:

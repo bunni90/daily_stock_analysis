@@ -273,6 +273,32 @@ function getSetupCheckStatusLabel(
   return t('settings.setupStatusOptional');
 }
 
+const SETUP_CHECK_I18N_PREFIX = 'settings.setupCheck.';
+
+function resolveSetupCheckI18nValue(
+  key: string | null | undefined,
+  fallback: string,
+  t: (key: UiTextKey, params?: Record<string, string | number>) => string,
+  params?: Record<string, string> | null,
+): string {
+  if (!key || !key.startsWith(SETUP_CHECK_I18N_PREFIX)) return fallback;
+  try {
+    const resolvedParams: Record<string, string | number> = {};
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (v.startsWith(SETUP_CHECK_I18N_PREFIX)) {
+          resolvedParams[k] = t(v as UiTextKey);
+        } else {
+          resolvedParams[k] = v;
+        }
+      }
+    }
+    return t(key as UiTextKey, resolvedParams);
+  } catch {
+    return fallback;
+  }
+}
+
 type FirstRunSetupCardProps = {
   status: SetupStatusResponse | null;
   isLoading: boolean;
@@ -393,14 +419,14 @@ const FirstRunSetupCard: React.FC<FirstRunSetupCardProps> = ({
                   {getSetupCheckIcon(check)}
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground">{check.title}</p>
+                      <p className="text-sm font-semibold text-foreground">{resolveSetupCheckI18nValue(check.titleKey, check.title, t)}</p>
                       <span className="rounded-full border settings-border bg-background/60 px-2 py-0.5 text-[11px] font-medium text-muted-text">
                         {getSetupCheckStatusLabel(check, t)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-muted-text">{check.message}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-text">{resolveSetupCheckI18nValue(check.messageKey, check.message, t, check.messageParams)}</p>
                     {check.nextStep ? (
-                      <p className="mt-2 text-xs leading-5 text-secondary-text">{check.nextStep}</p>
+                      <p className="mt-2 text-xs leading-5 text-secondary-text">{resolveSetupCheckI18nValue(check.nextStepKey, check.nextStep, t)}</p>
                     ) : null}
                   </div>
                 </div>
@@ -1281,9 +1307,7 @@ const SettingsPage: React.FC = () => {
   const shouldGuardActiveConfigPanel = activeCategory === 'notification' || activeCategory === 'agent';
   const activeConfigPanelErrorTitle = activeCategory === 'agent' ? t('settings.agentSettings') : t('settings.notificationSettings');
   const settingsPanelDiagnosticHint = isDesktopRuntime
-    ? uiLanguage === 'en'
-      ? <>Check and provide the desktop log <code>desktop.log</code>, plus the release version, Windows version, and trigger path.</>
-      : <>请查看并提供桌面端日志 <code>desktop.log</code>，同时补充 release 版本、Windows 版本和触发入口。</>
+    ? <span dangerouslySetInnerHTML={{ __html: t('settings.desktopLogHint') }} />
     : t('settings.diagnosticHintWeb');
   const activeConfigPanel = hasActiveConfigItems ? (
     <SettingsSectionCard

@@ -92,6 +92,10 @@ export interface SetupStatusCheck {
   status: 'configured' | 'inherited' | 'optional' | 'needs_action';
   message: string;
   nextStep?: string | null;
+  titleKey?: string | null;
+  messageKey?: string | null;
+  nextStepKey?: string | null;
+  messageParams?: Record<string, string> | null;
 }
 
 export interface SetupStatusResponse {

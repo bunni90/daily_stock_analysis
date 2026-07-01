@@ -36,6 +36,7 @@ from api.v1.schemas.portfolio import (
     PortfolioTradeCreateRequest,
 )
 from src.services.task_queue import get_task_queue
+from src.i18n import t as _t
 from src.services.portfolio_import_service import PortfolioImportService
 from src.services.portfolio_risk_service import PortfolioRiskService
 from src.services.portfolio_service import (
@@ -481,7 +482,7 @@ def analyze_position(symbol: str, request: PortfolioPositionAnalysisRequest) -> 
         task_id=task.task_id,
         trace_id=task.trace_id or task.task_id,
         status="pending",
-        message=f"分析任务已加入队列: {task.stock_code}",
+        message=_t("portfolio.task_queued", code=task.stock_code),
         analysis_phase=task.analysis_phase,
     )
     return response

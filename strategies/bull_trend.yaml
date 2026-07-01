@@ -2,7 +2,9 @@
 
 name: bull_trend
 display_name: 默认多头趋势
+display_name_en: "Default Bull Trend"
 description: 默认个股分析优先策略，识别多头排列、趋势延续与回踩低吸机会。
+description_en: "Default priority strategy for individual stock analysis. Identifies bullish MA alignment, trend continuation, and pullback buying opportunities."
 category: trend
 core_rules: [1, 2, 3]
 required_tools:
@@ -47,3 +49,37 @@ instructions: |
   - 回踩关键均线后企稳：`sentiment_score +8`
   - 放量突破关键阻力：`sentiment_score +10`
   - 跌破 MA20 或趋势转弱：`sentiment_score -12`
+
+instructions_en: |
+  **Default Bull Trend Strategy**
+
+  Applicable Scenarios:
+  - Default strategy for individual stock analysis.
+  - Prioritize opportunities with "upward trend + controllable risk + no chasing highs."
+
+  Analysis Framework:
+
+  1. **Trend Confirmation (Highest Priority)**
+     - Use `analyze_trend` to determine MA5/MA10/MA20 alignment.
+     - MA5 >= MA10 >= MA20 with MA20 slope upward is considered a bullish structure.
+     - If price significantly breaks below MA20, reduce bullish weighting.
+
+  2. **Position & Rhythm**
+     - Prioritize "pullback holding" over "chasing at highs."
+     - When price is too far from MA5/MA10, suggest waiting for pullback.
+     - Volume breakout above valid resistance can improve win-rate rating.
+
+  3. **Volume-Price Verification**
+     - Use `get_daily_history` to check if breakout/bounce days show volume increase.
+     - Shrinking volume on the rise requires caution; volume expansion with price stagnation signals divergence.
+
+  4. **Trade Recommendation Output**
+     - Output clear "Buy/Watch/Reduce" bias and trigger conditions.
+     - Must provide stop-loss reference (e.g., below MA20 or structural low).
+     - If no clear edge, explicitly write "Hold off for now" to avoid overtrading.
+
+  Scoring Adjustment Suggestions:
+  - Bullish alignment + strong trend: `sentiment_score +12`
+  - Stabilizes after pullback to key MA: `sentiment_score +8`
+  - Volume breakout above key resistance: `sentiment_score +10`
+  - Breaks below MA20 or trend weakens: `sentiment_score -12`

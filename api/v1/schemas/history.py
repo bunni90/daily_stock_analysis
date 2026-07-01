@@ -391,6 +391,9 @@ class RunDiagnosticComponent(BaseModel):
     status: str = Field(..., description="组件状态：ok/degraded/failed/unknown/not_configured/skipped")
     message: str = Field(..., description="用户可读摘要")
     details: Optional[Dict[str, Any]] = Field(None, description="折叠展示的诊断细节")
+    label_key: Optional[str] = Field(None, description="组件显示名称的 i18n key")
+    message_key: Optional[str] = Field(None, description="消息的 i18n key")
+    message_params: Optional[Dict[str, str]] = Field(None, description="消息 i18n 参数")
 
 
 class RunDiagnosticSummaryResponse(BaseModel):

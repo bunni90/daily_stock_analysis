@@ -3,6 +3,7 @@ import { analysisApi, DuplicateTaskError } from '../api/analysis';
 import type { ParsedApiError } from '../api/error';
 import { getParsedApiError } from '../api/error';
 import { historyApi } from '../api/history';
+import { formatUiText, UI_TEXT, type UiLanguage } from '../i18n/uiText';
 import type { AnalysisReport, HistoryItem, HistoryListResponse, ReportLanguage, StockBarItem, StockHistoryFilters, StockHistoryRange, TaskInfo } from '../types/analysis';
 import { getRecentStartDate, getTodayInShanghai } from '../utils/format';
 import { normalizeStockCode } from '../utils/stockCode';
@@ -51,6 +52,7 @@ const dismissedTaskIds = new Set<string>();
 const pendingCompletedTaskSelectionKeys = new Map<string, CompletedTaskSelectionIntent>();
 
 export interface StockPoolState {
+  language: UiLanguage;
   query: string;
   selectionSource: SelectionSource;
   notify: boolean;
@@ -88,6 +90,7 @@ export interface StockPoolState {
   stockBarItems: StockBarItem[];
   isLoadingStockBar: boolean;
   setQuery: (query: string) => void;
+  setStoreLanguage: (language: UiLanguage) => void;
   clearError: () => void;
   clearInlineMessages: () => void;
   openMarkdownDrawer: () => void;
@@ -123,6 +126,7 @@ export interface StockPoolState {
 }
 
 const initialState = {
+  language: 'en' as UiLanguage,
   query: '',
   selectionSource: 'manual' as SelectionSource,
   notify: true,
@@ -606,6 +610,8 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
     });
   },
 
+  setStoreLanguage: (language) => set({ language }),
+
   clearError: () => set({ error: null }),
 
   clearInlineMessages: () => set({ inputError: undefined, duplicateError: null }),
@@ -876,12 +882,12 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
     const skills = options?.skills;
 
     if (!stockCodeInput) {
-      set({ inputError: '请输入股票代码', duplicateError: null });
+      set({ inputError: UI_TEXT[get().language]['stockPool.enterStockCode'], duplicateError: null });
       return;
     }
 
     if (selectionSource !== 'autocomplete' && isObviouslyInvalidStockQuery(stockCodeInput)) {
-      set({ inputError: '请输入有效的股票代码或股票名称', duplicateError: null });
+      set({ inputError: UI_TEXT[get().language]['stockPool.invalidStockCode'], duplicateError: null });
       return;
     }
 
@@ -931,7 +937,7 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
 
       if (error instanceof DuplicateTaskError) {
         set({
-          duplicateError: `股票 ${error.stockCode} 正在分析中，请等待完成`,
+          duplicateError: formatUiText(UI_TEXT[get().language]['stockPool.analyzing'], { code: error.stockCode }),
         });
         return;
       }
@@ -970,7 +976,7 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
 
   syncTaskFailed: (task) => {
     get().syncTaskUpdated(task);
-    set({ error: getParsedApiError(task.error || '分析失败') });
+    set({ error: getParsedApiError(task.error || UI_TEXT[get().language]['stockPool.analysisFailed']) });
   },
 
   refreshActiveTasks: async () => {

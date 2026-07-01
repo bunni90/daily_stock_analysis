@@ -1,4 +1,6 @@
 import type { DecisionAction } from '../types/analysis';
+import type { UiLanguage } from '../i18n/uiText';
+import { UI_TEXT } from '../i18n/uiText';
 
 export type DecisionActionTone = 'success' | 'warning' | 'danger' | 'default';
 export type DecisionActionLabelMap = Record<DecisionAction, string>;
@@ -23,6 +25,20 @@ export const DEFAULT_DECISION_ACTION_LABELS: DecisionActionLabelMap = {
   avoid: '回避',
   alert: '预警',
 };
+
+export function getDecisionActionLabels(language: UiLanguage = 'en'): DecisionActionLabelMap {
+  const t = UI_TEXT[language];
+  return {
+    buy: t['decision.buy'],
+    add: t['decision.add'],
+    hold: t['decision.hold'],
+    reduce: t['decision.reduce'],
+    sell: t['decision.sell'],
+    watch: t['decision.watch'],
+    avoid: t['decision.avoid'],
+    alert: t['decision.alert'],
+  };
+}
 
 const resolveActionLabels = (labels?: Partial<DecisionActionLabelMap>): DecisionActionLabelMap => ({
   ...DEFAULT_DECISION_ACTION_LABELS,
@@ -221,7 +237,7 @@ export const getDecisionActionLabel = (
   action?: DecisionAction | null,
   actionLabel?: string | null,
   legacyAdvice?: string | null,
-  emptyLabel: string | null = '建议',
+  emptyLabel: string | null = null,
   labels?: Partial<DecisionActionLabelMap>,
 ): string | null => {
   const actionLabels = resolveActionLabels(labels);

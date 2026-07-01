@@ -42,6 +42,33 @@ US_INDEX_MAPPING = {
     '^RUT': ('^RUT', '罗素2000指数'),
 }
 
+INDEX_NAME_EN: dict[str, str] = {
+    '标普500指数': 'S&P 500',
+    '道琼斯工业指数': 'Dow Jones Industrial',
+    '纳斯达克综合指数': 'NASDAQ Composite',
+    '纳斯达克100指数': 'NASDAQ 100',
+    'VIX恐慌指数': 'VIX Fear Index',
+    '罗素2000指数': 'Russell 2000',
+    '上证指数': 'SSE Composite',
+    '深证成指': 'SZSE Component',
+    '创业板指': 'ChiNext',
+    '科创50': 'STAR 50',
+    '上证50': 'SSE 50',
+    '沪深300': 'CSI 300',
+    '恒生指数': 'Hang Seng Index',
+    '恒生科技指数': 'Hang Seng TECH',
+    '国企指数': 'Hang Seng CEI',
+    '日经225': 'Nikkei 225',
+    'KOSPI': 'KOSPI',
+    'KOSDAQ': 'KOSDAQ',
+}
+
+
+def translate_index_name(name: str, language: str = "en") -> str:
+    if language != "en":
+        return name
+    return INDEX_NAME_EN.get(name, name)
+
 
 def is_us_index_code(code: str) -> bool:
     """

@@ -14,6 +14,7 @@ from typing import List
 
 from bot.commands.base import BotCommand
 from bot.models import BotMessage, BotResponse
+from src.i18n import t as _t
 
 
 class StatusCommand(BotCommand):
@@ -36,7 +37,7 @@ class StatusCommand(BotCommand):
     
     @property
     def description(self) -> str:
-        return "显示系统状态"
+        return _t("bot.status.desc")
     
     @property
     def usage(self) -> str:
@@ -74,7 +75,7 @@ class StatusCommand(BotCommand):
         llm_model = (getattr(config, "litellm_model", "") or "").strip()
         agent_model = (getattr(config, "agent_litellm_model", "") or "").strip()
         status["ai_primary_model"] = llm_model
-        status["ai_agent_model"] = agent_model or ("继承主模型" if llm_model else "")
+        status["ai_agent_model"] = agent_model or (_t("bot.status.inherit_model") if llm_model else "")
         status["ai_channels"] = [
             str(channel.get("name") or "").strip()
             for channel in llm_channels
@@ -149,30 +150,30 @@ class StatusCommand(BotCommand):
             return "✅" if enabled else "❌"
         
         lines = [
-            "📊 **股票分析助手 - 系统状态**",
+            _t("bot.status.header"),
             "",
-            f"🕐 时间: {status['timestamp']}",
+            f"{_t('bot.status.time')} {status['timestamp']}",
             f"🐍 Python: {status['python_version']}",
-            f"💻 平台: {status['platform']}",
+            f"{_t('bot.status.platform')} {status['platform']}",
             "",
             "---",
             "",
-            "**📈 自选股配置**",
-            f"• 股票数量: {status['stock_count']} 只",
+            _t("bot.status.watchlist_section"),
+            _t("bot.status.stock_count", count=status['stock_count']),
         ]
         
         if status['stock_list']:
             stocks_preview = ", ".join(status['stock_list'])
             if status['stock_count'] > 5:
-                stocks_preview += f" ... 等 {status['stock_count']} 只"
-            lines.append(f"• 股票列表: {stocks_preview}")
+                stocks_preview += _t("bot.status.more_stocks", count=status['stock_count'])
+            lines.append(f"{_t('bot.status.stock_list')} {stocks_preview}")
         
         lines.extend([
             "",
-            "**🤖 AI 分析服务**",
-            f"• 主模型: {status['ai_primary_model'] or '未配置'}",
-            f"• Agent 模型: {status['ai_agent_model'] or '未配置'}",
-            f"• LLM 渠道: {', '.join(status['ai_channels']) if status['ai_channels'] else '未配置'}",
+            _t("bot.status.ai_section"),
+            _t("bot.status.primary_model", model=status['ai_primary_model'] or _t("bot.status.not_configured")),
+            _t("bot.status.agent_model", model=status['ai_agent_model'] or _t("bot.status.not_configured")),
+            _t("bot.status.llm_channels", channels=', '.join(status['ai_channels']) if status['ai_channels'] else _t("bot.status.not_configured")),
             f"• LiteLLM YAML: {icon(status['ai_yaml'])}",
             "• Legacy Key: "
             + ", ".join(
@@ -180,7 +181,7 @@ class StatusCommand(BotCommand):
                 for name, enabled in status["ai_legacy_keys"].items()
             ),
             "",
-            "**🔍 搜索服务**",
+            _t("bot.status.search_section"),
             f"• Bocha: {icon(status['search_bocha'])}",
             f"• Tavily: {icon(status['search_tavily'])}",
             f"• Brave: {icon(status['search_brave'])}",
@@ -188,7 +189,7 @@ class StatusCommand(BotCommand):
             f"• MiniMax: {icon(status['search_minimax'])}",
             f"• SearXNG: {icon(status['search_searxng'])}",
             "",
-            "**📢 通知渠道**",
+            _t("bot.status.notify_section"),
             f"• 企业微信: {icon(status['notify_wechat'])}",
             f"• 飞书: {icon(status['notify_feishu'])}",
             f"• Telegram: {icon(status['notify_telegram'])}",
@@ -204,14 +205,14 @@ class StatusCommand(BotCommand):
             lines.extend([
                 "",
                 "---",
-                "✅ **系统就绪，可以开始分析！**",
+                _t("bot.status.ready"),
             ])
         else:
             lines.extend([
                 "",
                 "---",
-                "⚠️ **AI 服务未配置，分析功能不可用**",
-                "请配置 LITELLM_MODEL、LLM_CHANNELS、LITELLM_CONFIG 或任一 provider API Key",
+                _t("bot.status.not_ready"),
+                _t("bot.status.configure_hint"),
             ])
         
         return "\n".join(lines)

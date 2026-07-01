@@ -42,13 +42,13 @@ function sanitizeUrlLikeText(value: string) {
   });
 }
 
-function getSafeErrorSummary(error: unknown) {
+function getSafeErrorSummary(error: unknown, fallbackText?: string) {
   const rawMessage = error instanceof Error
     ? error.message
     : typeof error === 'string'
       ? error
-      : '未知前端运行时异常';
-  const normalized = rawMessage.replace(/\s+/g, ' ').trim() || '未知前端运行时异常';
+      : fallbackText || 'Unknown frontend runtime error';
+  const normalized = rawMessage.replace(/\s+/g, ' ').trim() || fallbackText || 'Unknown frontend runtime error';
   const sanitized = sanitizeUrlLikeText(normalized)
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/gi, 'Bearer [redacted]')
     .replace(/\b(sk-[A-Za-z0-9_-]{8,})\b/g, '[redacted-key]')
@@ -124,20 +124,13 @@ class SettingsPanelErrorBoundaryImpl extends Component<
 }
 
 export const SettingsPanelErrorBoundary = (props: SettingsPanelErrorBoundaryProps) => {
-  const { language } = useUiLanguage();
-  const labels: SettingsPanelErrorBoundaryLabels = language === 'en'
-    ? {
-        loadFailedSuffix: ' failed to load',
-        runtimeErrorMessage: 'This settings area hit a frontend runtime error. Other settings remain usable.',
-        defaultDiagnosticHint: 'Provide the release version, runtime environment, and trigger path to help diagnose the issue.',
-        errorSummaryPrefix: 'Error summary: ',
-      }
-    : {
-        loadFailedSuffix: '加载失败',
-        runtimeErrorMessage: '该设置区域发生前端运行时异常，页面其他设置仍可继续使用。',
-        defaultDiagnosticHint: '请补充 release 版本、运行环境和触发入口，便于定位问题。',
-        errorSummaryPrefix: '错误摘要：',
-      };
+  const { t } = useUiLanguage();
+  const labels: SettingsPanelErrorBoundaryLabels = {
+    loadFailedSuffix: ` ${t('settings.errorBoundaryTitle')}`,
+    runtimeErrorMessage: t('settings.errorBoundaryMessage'),
+    defaultDiagnosticHint: t('settings.errorBoundaryReport'),
+    errorSummaryPrefix: t('settings.errorBoundarySummary'),
+  };
 
   return <SettingsPanelErrorBoundaryImpl {...props} labels={labels} />;
 };

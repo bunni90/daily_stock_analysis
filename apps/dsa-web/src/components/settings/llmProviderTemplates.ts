@@ -21,6 +21,45 @@ export interface LLMProviderTemplate {
   }>;
 }
 
+import type { UiTextKey } from '../../i18n/uiText';
+
+export type TranslateFn = (key: UiTextKey, params?: Record<string, string | number>) => string;
+
+const CAPABILITY_I18N_KEYS: Record<LLMProviderCapability, { label: string; hint: string }> = {
+  'openai-compatible': {
+    label: 'settings.llm.template.capOpenaiCompatible',
+    hint: 'settings.llm.template.capOpenaiCompatibleHint',
+  },
+  aggregator: {
+    label: 'settings.llm.template.capAggregator',
+    hint: 'settings.llm.template.capAggregatorHint',
+  },
+  'official-api': {
+    label: 'settings.llm.template.capOfficialApi',
+    hint: 'settings.llm.template.capOfficialApiHint',
+  },
+  'model-discovery': {
+    label: 'settings.llm.template.capModelDiscovery',
+    hint: 'settings.llm.template.capModelDiscoveryHint',
+  },
+  vision: {
+    label: 'settings.llm.template.capVision',
+    hint: 'settings.llm.template.capVisionHint',
+  },
+  'local-runtime': {
+    label: 'settings.llm.template.capLocalRuntime',
+    hint: 'settings.llm.template.capLocalRuntimeHint',
+  },
+};
+
+export function getCapabilityLabels(t: TranslateFn): Record<LLMProviderCapability, { label: string; hint: string }> {
+  const result: Record<string, { label: string; hint: string }> = {};
+  for (const [cap, keys] of Object.entries(CAPABILITY_I18N_KEYS)) {
+    result[cap] = { label: t(keys.label as UiTextKey), hint: t(keys.hint as UiTextKey) };
+  }
+  return result as Record<LLMProviderCapability, { label: string; hint: string }>;
+}
+
 export const LLM_PROVIDER_CAPABILITY_LABELS: Record<LLMProviderCapability, { label: string; hint: string }> = {
   'openai-compatible': {
     label: 'OpenAI 兼容',
@@ -48,10 +87,24 @@ export const LLM_PROVIDER_CAPABILITY_LABELS: Record<LLMProviderCapability, { lab
   },
 };
 
-export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
+interface ProviderTemplateDef {
+  channelId: string;
+  labelKey: string;
+  protocol: ChannelProtocol;
+  baseUrl: string;
+  placeholderModels: string;
+  capabilities: LLMProviderCapability[];
+  configHintKey?: string;
+  officialSources: Array<{
+    label: string;
+    url: string;
+  }>;
+}
+
+const PROVIDER_TEMPLATE_DEFS: ProviderTemplateDef[] = [
   {
     channelId: 'aihubmix',
-    label: 'AIHubmix（聚合平台）',
+    labelKey: 'settings.llm.template.provider.aihubmix',
     protocol: 'openai',
     baseUrl: 'https://aihubmix.com/v1',
     placeholderModels: 'gpt-5.5,claude-sonnet-4-6,gemini-3.1-pro-preview',
@@ -60,13 +113,12 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'anspire',
-    label: 'Anspire Open（一站式模型+搜索）',
+    labelKey: 'settings.llm.template.provider.anspire',
     protocol: 'openai',
     baseUrl: 'https://open-gateway.anspire.cn/v6',
     placeholderModels: 'Doubao-Seed-2.0-lite,Doubao-Seed-2.0-pro,qwen3.5-flash,MiniMax-M2.7',
     capabilities: ['openai-compatible'],
-    configHint:
-      '同一 ANSPIRE_API_KEYS 可复用到搜索与 LLM 渠道。以下模型与网关为配置示例，实际可用性请以账号权限和控制台为准；建议先点“测试连接”确认。',
+    configHintKey: 'settings.llm.template.provider.anspireHint',
     officialSources: [
       { label: 'Anspire Open', url: 'https://open.anspire.cn/?share_code=QFBC0FYC' },
       {
@@ -77,7 +129,7 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'deepseek',
-    label: 'DeepSeek 官方',
+    labelKey: 'settings.llm.template.provider.deepseek',
     protocol: 'deepseek',
     baseUrl: 'https://api.deepseek.com',
     placeholderModels: 'deepseek-v4-flash,deepseek-v4-pro',
@@ -86,7 +138,7 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'dashscope',
-    label: '通义千问（Dashscope）',
+    labelKey: 'settings.llm.template.provider.dashscope',
     protocol: 'openai',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     placeholderModels: 'qwen3.6-plus,qwen3.6-flash',
@@ -97,7 +149,7 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'zhipu',
-    label: '智谱 GLM',
+    labelKey: 'settings.llm.template.provider.zhipu',
     protocol: 'openai',
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
     placeholderModels: 'glm-5.1,glm-4.7-flash',
@@ -106,7 +158,7 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'moonshot',
-    label: 'Moonshot（月之暗面）',
+    labelKey: 'settings.llm.template.provider.moonshot',
     protocol: 'openai',
     baseUrl: 'https://api.moonshot.cn/v1',
     placeholderModels: 'kimi-k2.6,kimi-k2.5',
@@ -115,7 +167,7 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'minimax',
-    label: 'MiniMax 官方',
+    labelKey: 'settings.llm.template.provider.minimax',
     protocol: 'openai',
     baseUrl: 'https://api.minimax.io/v1',
     placeholderModels: 'MiniMax-M3,MiniMax-M2.7,MiniMax-M2.7-highspeed',
@@ -127,12 +179,12 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'volcengine',
-    label: '火山方舟（豆包）',
+    labelKey: 'settings.llm.template.provider.volcengine',
     protocol: 'openai',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
     placeholderModels: 'doubao-seed-1-6-251015,doubao-seed-1-6-thinking-251015',
     capabilities: ['openai-compatible'],
-    configHint: '确认在线推理 endpoint / region 与 Coding Plan 专用入口不要混用。',
+    configHintKey: 'settings.llm.template.provider.volcengineHint',
     officialSources: [
       { label: 'Volcengine Ark Inference', url: 'https://www.volcengine.com/docs/82379/2121998' },
       { label: 'Volcengine Ark Models', url: 'https://www.volcengine.com/docs/82379/1949118' },
@@ -140,29 +192,29 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'siliconflow',
-    label: '硅基流动（SiliconFlow）',
+    labelKey: 'settings.llm.template.provider.siliconflow',
     protocol: 'openai',
     baseUrl: 'https://api.siliconflow.cn/v1',
     placeholderModels: 'deepseek-ai/DeepSeek-V3.2,Qwen/Qwen3-235B-A22B-Thinking-2507',
     capabilities: ['openai-compatible', 'model-discovery'],
-    configHint: '模型列表和模型可见性依赖账号权限与 API Key。',
+    configHintKey: 'settings.llm.template.provider.siliconflowHint',
     officialSources: [{ label: 'SiliconFlow Models', url: 'https://docs.siliconflow.cn/quickstart/models' }],
   },
   {
     channelId: 'openrouter',
-    label: 'OpenRouter',
+    labelKey: 'OpenRouter',
     protocol: 'openai',
     baseUrl: 'https://openrouter.ai/api/v1',
     placeholderModels: '~anthropic/claude-sonnet-latest,~openai/gpt-latest',
     capabilities: ['openai-compatible', 'aggregator', 'model-discovery'],
-    configHint: '模型列表和模型可见性依赖账号权限与 API Key。',
+    configHintKey: 'settings.llm.template.provider.openrouterHint',
     officialSources: [
       { label: 'OpenRouter Models API', url: 'https://openrouter.ai/docs/api/api-reference/models/get-models' },
     ],
   },
   {
     channelId: 'gemini',
-    label: 'Gemini 官方',
+    labelKey: 'settings.llm.template.provider.gemini',
     protocol: 'gemini',
     baseUrl: '',
     placeholderModels: 'gemini-3.1-pro-preview,gemini-3-flash-preview',
@@ -171,7 +223,7 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'anthropic',
-    label: 'Anthropic 官方',
+    labelKey: 'settings.llm.template.provider.anthropic',
     protocol: 'anthropic',
     baseUrl: '',
     placeholderModels: 'claude-sonnet-4-6,claude-opus-4-7',
@@ -182,7 +234,7 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'openai',
-    label: 'OpenAI 官方',
+    labelKey: 'settings.llm.template.provider.openai',
     protocol: 'openai',
     baseUrl: 'https://api.openai.com/v1',
     placeholderModels: 'gpt-5.5,gpt-5.4-mini',
@@ -191,17 +243,17 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
   {
     channelId: 'ollama',
-    label: 'Ollama（本地）',
+    labelKey: 'settings.llm.template.provider.ollama',
     protocol: 'ollama',
     baseUrl: 'http://127.0.0.1:11434',
     placeholderModels: 'llama3.2,qwen2.5',
     capabilities: ['local-runtime'],
-    configHint: '需要本机、Docker 或 self-hosted runner 能访问 Ollama 服务。',
+    configHintKey: 'settings.llm.template.provider.ollamaHint',
     officialSources: [{ label: 'Ollama API', url: 'https://github.com/ollama/ollama/blob/main/docs/api.md' }],
   },
   {
     channelId: 'custom',
-    label: '自定义渠道',
+    labelKey: 'settings.llm.template.provider.custom',
     protocol: 'openai',
     baseUrl: '',
     placeholderModels: 'model-name-1,model-name-2',
@@ -210,9 +262,37 @@ export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = [
   },
 ];
 
+function defToTemplate(def: ProviderTemplateDef, t: TranslateFn): LLMProviderTemplate {
+  const isBrandNameOnly = !def.labelKey.startsWith('settings.llm.');
+  return {
+    channelId: def.channelId,
+    label: isBrandNameOnly ? def.labelKey : t(def.labelKey as UiTextKey),
+    protocol: def.protocol,
+    baseUrl: def.baseUrl,
+    placeholderModels: def.placeholderModels,
+    capabilities: def.capabilities,
+    configHint: def.configHintKey ? t(def.configHintKey as UiTextKey) : undefined,
+    officialSources: def.officialSources,
+  };
+}
+
+export function getProviderTemplates(t: TranslateFn): LLMProviderTemplate[] {
+  return PROVIDER_TEMPLATE_DEFS.map((def) => defToTemplate(def, t));
+}
+
+export const LLM_PROVIDER_TEMPLATES: LLMProviderTemplate[] = PROVIDER_TEMPLATE_DEFS.map((def) => defToTemplate(def, (key) => key));
+
 export const LLM_PROVIDER_TEMPLATE_BY_ID: Record<string, LLMProviderTemplate> = Object.fromEntries(
   LLM_PROVIDER_TEMPLATES.map((template) => [template.channelId, template]),
 );
+
+export function getProviderTemplateById(channelId: string, t: TranslateFn): LLMProviderTemplate | undefined {
+  const def = PROVIDER_TEMPLATE_DEFS.find((d) => d.channelId === channelId);
+  if (!def) {
+    return undefined;
+  }
+  return defToTemplate(def, t);
+}
 
 export function getProviderTemplate(channelId: string): LLMProviderTemplate | undefined {
   if (!Object.prototype.hasOwnProperty.call(LLM_PROVIDER_TEMPLATE_BY_ID, channelId)) {

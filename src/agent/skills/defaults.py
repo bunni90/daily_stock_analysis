@@ -15,6 +15,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
+from src.report_language import normalize_report_language
+
 
 _BUILTIN_SKILLS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "strategies"
 
@@ -70,7 +72,43 @@ following default risk controls as the shared baseline:
 """
 
 
-def get_default_trading_skill_policy(*, explicit_skill_selection: bool) -> str:
+CORE_TRADING_SKILL_POLICY_EN = """## Default Skill Baseline (must strictly follow)
+
+The currently activated skills can supplement and refine the analysis perspective, but the default risk controls and trading rhythm below must be observed.
+
+### 1. Strict Entry (No Chasing Highs)
+- **Absolutely no chasing highs**: when the stock price deviates more than 5% from MA5, do NOT buy
+- Bias < 2%: ideal buy zone
+- Bias 2-5%: small position entry acceptable
+- Bias > 5%: strictly no chasing! Automatically rate as "Hold/Watch"
+
+### 2. Trend Trading (Follow the Trend)
+- **Bullish alignment requirement**: MA5 > MA10 > MA20
+- Only trade stocks with bullish alignment; avoid bearish alignment entirely
+- Diverging upward MAs preferred over converging MAs
+
+### 3. Efficiency Priority (Chip Structure)
+- Monitor chip concentration: 90% concentration < 15% indicates concentrated chips
+- Profit ratio analysis: 70-90% profitable chips warrants caution for profit-taking pressure
+- Average cost vs. current price: current price 5-15% above average cost is healthy
+
+### 4. Buy Point Preference (Pullback to Support)
+- **Best entry**: shrink-pullback to MA5 with support
+- **Second-best entry**: pullback to MA10 with support
+- **Hold off**: when price breaks below MA20
+
+### 5. Risk Screening Focus
+- Sell-down announcements, earnings pre-loss, regulatory penalties, industry policy headwinds, large lock-up expirations
+
+### 6. Valuation Watch (PE/PB)
+- When PE is clearly elevated, note it in risk points
+
+### 7. Strong Trend Stock Relaxation
+- Strong trending stocks can适度 relax bias requirements; light position tracking with stop-loss
+"""
+
+
+def get_default_trading_skill_policy(*, explicit_skill_selection: bool, report_language: str = "en") -> str:
     """Return the legacy default trading baseline only for implicit/default runs.
 
     When a caller explicitly chooses a skill (via request payload or config),
@@ -79,6 +117,8 @@ def get_default_trading_skill_policy(*, explicit_skill_selection: bool) -> str:
     """
     if explicit_skill_selection:
         return ""
+    if normalize_report_language(report_language) == "en":
+        return CORE_TRADING_SKILL_POLICY_EN
     return CORE_TRADING_SKILL_POLICY_ZH
 
 

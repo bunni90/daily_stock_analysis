@@ -50,12 +50,16 @@ export const getRecentStartDate = (days: number): string => {
 export const getTodayInShanghai = (): string =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
 
-export const formatReportType = (value?: string): string => {
+import type { UiLanguage } from '../i18n/uiText';
+import { UI_TEXT } from '../i18n/uiText';
+
+export const formatReportType = (value?: string, language: UiLanguage = 'en'): string => {
   if (!value) return '—';
-  if (value === 'simple') return '普通';
-  if (value === 'detailed') return '标准';
-  if (value === 'full') return '完整';
-  if (value === 'brief') return '简版';
-  if (value === 'market_review') return '大盘';
+  const t = UI_TEXT[language];
+  if (value === 'simple') return t['format.analysisTypeNormal'];
+  if (value === 'detailed') return t['format.analysisTypeStandard'];
+  if (value === 'full') return t['format.analysisTypeFull'];
+  if (value === 'brief') return t['format.analysisTypeBrief'];
+  if (value === 'market_review') return t['format.analysisTypeMarket'];
   return value;
 };

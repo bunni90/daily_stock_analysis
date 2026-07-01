@@ -14,6 +14,7 @@ from typing import List, Optional
 from bot.commands.base import BotCommand
 from bot.models import BotMessage, BotResponse
 from src.services.stock_code_utils import resolve_index_stock_code_for_analysis
+from src.i18n import t as _t
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class AnalyzeCommand(BotCommand):
     
     @property
     def description(self) -> str:
-        return "分析指定股票"
+        return _t("bot.analyze.desc")
     
     @property
     def usage(self) -> str:
@@ -48,7 +49,7 @@ class AnalyzeCommand(BotCommand):
     def validate_args(self, args: List[str]) -> Optional[str]:
         """验证参数"""
         if not args:
-            return "请输入股票代码"
+            return _t("bot.analyze.enter_code")
         
         code = args[0].upper()
 
@@ -61,7 +62,7 @@ class AnalyzeCommand(BotCommand):
         is_us_stock = re.match(r'^[A-Z]{1,5}(\.[A-Z]{1,2})?$', code)
 
         if not (is_a_stock or is_hk_stock or is_us_stock):
-            return f"无效的股票代码: {code}（A股6位数字 / 港股HK+5位数字 / 美股1-5个字母）"
+            return _t("bot.analyze.invalid_code", code=code)
         
         return None
     
@@ -93,15 +94,15 @@ class AnalyzeCommand(BotCommand):
                 task_id = result.get("task_id", "")
                 return BotResponse.markdown_response(
                     f"✅ **分析任务已提交**\n\n"
-                    f"• 股票代码: `{code}`\n"
-                    f"• 报告类型: {ReportType.from_str(report_type).display_name}\n"
+                    f"{_t('bot.analyze.stock_code', code=code)}\n"
+                    f"{_t('bot.analyze.report_type', type=ReportType.from_str(report_type).display_name)}\n"
                     f"• 任务 ID: `{task_id[:20]}...`\n\n"
-                    f"分析完成后将自动推送结果。"
+                    f"{_t('bot.analyze.will_notify')}"
                 )
             else:
                 error = result.get("error", "未知错误")
-                return BotResponse.error_response(f"提交分析任务失败: {error}")
+                return BotResponse.error_response(_t("bot.analyze.submit_failed", error=error))
                 
         except Exception as e:
             logger.error(f"[AnalyzeCommand] 执行失败: {e}")
-            return BotResponse.error_response(f"分析失败: {str(e)[:100]}")
+            return BotResponse.error_response(_t("bot.analyze.failed", error=str(e)[:100]))

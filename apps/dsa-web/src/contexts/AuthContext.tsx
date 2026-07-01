@@ -2,6 +2,7 @@ import type React from 'react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { createParsedApiError, getParsedApiError, type ParsedApiError } from '../api/error';
 import { authApi } from '../api/auth';
+import { useUiLanguage } from './UiLanguageContext';
 import { useStockPoolStore } from '../stores';
 
 type AuthContextValue = {
@@ -24,12 +25,12 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function extractLoginError(err: unknown): ParsedApiError {
+function extractLoginError(err: unknown, t: (key: 'auth.rateLimited' | 'auth.rateLimitedMessage') => string): ParsedApiError {
   const parsed = getParsedApiError(err);
   if (parsed.status === 429) {
     return createParsedApiError({
-      title: '登录尝试过于频繁',
-      message: '尝试次数过多，请稍后再试。',
+      title: t('auth.rateLimited'),
+      message: t('auth.rateLimitedMessage'),
       rawMessage: parsed.rawMessage,
       status: parsed.status,
       category: parsed.category,
@@ -39,6 +40,7 @@ function extractLoginError(err: unknown): ParsedApiError {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useUiLanguage();
   const [authEnabled, setAuthEnabled] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [passwordSet, setPasswordSet] = useState(false);
@@ -87,10 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchStatus();
         return { success: true };
       } catch (err: unknown) {
-        return { success: false, error: extractLoginError(err) };
+        return { success: false, error: extractLoginError(err, t) };
       }
     },
-    [fetchStatus]
+    [fetchStatus, t]
   );
 
   const changePassword = useCallback(

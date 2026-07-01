@@ -3,7 +3,9 @@
 
 name: box_oscillation
 display_name: 箱体震荡
+display_name_en: "Box Oscillation"
 description: 识别价格箱体区间，在箱底买入、箱顶减仓，适用于横盘震荡行情。
+description_en: "Identifies price box ranges. Buy at box bottom, reduce at box top. Suitable for range-bound markets."
 category: framework
 core_rules: [1, 2, 3]
 required_tools:
@@ -67,3 +69,57 @@ instructions: |
   - 箱体向上有效突破：`sentiment_score +15，转趋势策略`
   - 处于箱顶区域：`sentiment_score -5（不追高）`
   - 箱底有效跌破：`sentiment_score -15，离场`
+
+instructions_en: |
+  **Box Range Trading Strategy**
+
+  Core Logic: Within the box, price oscillates repeatedly between resistance and support.
+  "Buy near support, sell near resistance" — capture range returns through swing trading.
+
+  ## Analysis Steps
+
+  ### 1. Box Identification
+  Use `get_daily_history` to get 60~120 days of data:
+
+  - **Box Top (Resistance)**: Line connecting recent highs that were touched multiple times but not decisively broken.
+    Typically a cluster of 3+ highs within 20~60 days.
+  - **Box Bottom (Support)**: Line connecting recent lows that were tested multiple times but not decisively broken.
+  - Box validity: Top and bottom must each be touched at least 2~3 times for confirmation.
+  - Use `analyze_trend` support_levels / resistance_levels to assist positioning.
+
+  ### 2. Current Position Assessment
+  Use `get_realtime_quote` to get current price and compare with box boundaries:
+
+  - **Box Bottom Area** (within 5% of support): Buy/add signal, stop-loss set 3% below box bottom.
+  - **Box Middle Area** (middle 1/3 of box): Watch, no active trading.
+  - **Box Top Area** (within 5% of resistance): Reduce/take-profit signal, no chasing highs.
+
+  ### 3. Volume-Assisted Judgment
+  - **Volume surge stabilizing at box bottom**: Strong signal of valid support, can size up.
+  - **Shrinking volume stagnation at box top**: Valid resistance sell signal.
+  - **Box breakout (volume exceeding 2x average)**:
+    - Valid upward breakout → switch to bull trend strategy, new target = box height extension.
+    - Valid downward breakdown → exit and wait, former support becomes resistance.
+
+  ### 4. Box Width & Expected Returns
+  - Calculate box width: (Top - Bottom) / Bottom × 100%.
+  - Width < 5%: Insufficient trading space, not recommended to participate.
+  - Width 5%~15%: Standard box, swing trading feasible.
+  - Width > 15%: Large box, larger swing trades possible.
+
+  ### 5. False Breakout Identification
+  - Single-day intraday touch of resistance/support followed by quick pullback, closing back inside the box → false breakout, maintain box trading.
+  - Consecutive two-day close beyond box boundary with volume expansion → true breakout, modify strategy.
+
+  ### 6. Output Requirements
+  - Clearly provide box top and bottom price levels.
+  - Current price zone (box bottom / box middle / box top).
+  - If price has broken out, explain breakout direction and new target.
+  - Recommended position size and stop-loss level.
+
+  Scoring Adjustment Suggestions:
+  - Box bottom stabilization + shrinking volume: `sentiment_score +10`
+  - Box bottom volume surge attacking top: `sentiment_score +12`
+  - Valid upward box breakout: `sentiment_score +15, switch to trend strategy`
+  - In box top area: `sentiment_score -5 (no chasing highs)`
+  - Valid downward break below box bottom: `sentiment_score -15, exit`

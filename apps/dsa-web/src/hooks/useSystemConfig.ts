@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createParsedApiError, getParsedApiError, type ParsedApiError } from '../api/error';
+import { useUiLanguage } from '../contexts/UiLanguageContext';
+import { formatUiText } from '../i18n/uiText';
 import { systemConfigApi, SystemConfigConflictError, SystemConfigValidationError } from '../api/systemConfig';
 import type {
   ConfigValidationIssue,
@@ -64,6 +66,8 @@ function normalizeFieldValue(value: string, schema: SystemConfigItem['schema'] |
 }
 
 export function useSystemConfig() {
+  const { t } = useUiLanguage();
+
   // Server state
   const [configVersion, setConfigVersion] = useState<string>('');
   const [maskToken, setMaskToken] = useState<string>('******');
@@ -293,13 +297,13 @@ export function useSystemConfig() {
     const resolvedChangedItems = explicitItems.length > 0 ? explicitItems : getChangedItems();
 
     if (!explicitItems.length && !hasDirty) {
-      setToast({ type: 'success', message: '当前没有可保存的修改。' });
-      return { success: true, message: '当前没有可保存的修改' };
+      setToast({ type: 'success', message: t('config.noChanges') });
+      return { success: true, message: t('config.noChangesShort') };
     }
 
     if (!resolvedChangedItems.length) {
-      setToast({ type: 'success', message: '当前没有可保存的修改。' });
-      return { success: true, message: '当前没有可保存的修改' };
+      setToast({ type: 'success', message: t('config.noChanges') });
+      return { success: true, message: t('config.noChangesShort') };
     }
 
     setIsSaving(true);
@@ -312,15 +316,15 @@ export function useSystemConfig() {
 
       if (!validateResult.valid) {
         setSaveError(createParsedApiError({
-          title: '配置校验未通过',
-          message: '请先修正表单错误后再保存。',
-          rawMessage: '配置校验未通过，请先修正表单错误。',
+          title: t('config.validationFailed'),
+          message: t('config.fixFormFirst'),
+          rawMessage: t('config.validationFailedShort'),
           category: 'http_error',
         }));
         setRetryAction('save');
         return {
           success: false,
-          message: '配置校验未通过',
+          message: t('config.validationFailed'),
           issues: validateResult.issues,
         };
       }
@@ -336,9 +340,9 @@ export function useSystemConfig() {
       applyServerPayload(refreshed.items, refreshed.configVersion, refreshed.maskToken);
 
       const warningText = updateResult.warnings?.length
-        ? `；警告：${updateResult.warnings.join('；')}`
+        ? `${t('config.warningPrefix')}${updateResult.warnings.join(t('config.warningPrefix'))}`
         : '';
-      setToast({ type: 'success', message: `配置已更新${warningText}` });
+      setToast({ type: 'success', message: `${t('config.configUpdated')}${warningText}` });
       return { success: true };
     } catch (error: unknown) {
       if (error instanceof SystemConfigValidationError) {
@@ -346,8 +350,8 @@ export function useSystemConfig() {
         setSaveError(error.parsedError);
       } else if (error instanceof SystemConfigConflictError) {
         setSaveError(createParsedApiError({
-          title: '配置版本冲突',
-          message: `${error.message}，请先重新加载配置。`,
+          title: t('config.versionConflict'),
+          message: formatUiText(t('config.reloadFirst'), { message: error.message }),
           rawMessage: error.parsedError.rawMessage,
           status: error.parsedError.status,
           category: error.parsedError.category,
@@ -358,7 +362,7 @@ export function useSystemConfig() {
 
       setToast({ type: 'error', error: getParsedApiError(error) });
       setRetryAction('save');
-      return { success: false, message: '保存失败' };
+      return { success: false, message: t('config.saveFailed') };
     } finally {
       setIsSaving(false);
     }
@@ -368,6 +372,7 @@ export function useSystemConfig() {
     getChangedItems,
     hasDirty,
     maskToken,
+    t,
   ]);
 
   const retry = useCallback(async () => {

@@ -3,7 +3,9 @@
 
 name: one_yang_three_yin
 display_name: 一阳夹三阴
+display_name_en: "One Yang Three Yin"
 description: 检测一阳夹三阴K线整理形态，趋势延续入场信号。
+description_en: "Detects one bullish candle enclosing three bearish candles pattern. Trend continuation entry signal."
 category: pattern
 core_rules: [2, 4]
 required_tools:
@@ -35,3 +37,27 @@ instructions: |
   - 形态成立但趋势不明：sentiment_score +5
   - 在 `pattern_analysis` 和 `buy_reason` 中注明"一阳夹三阴"。
   - 理想买点设在第5日收盘价附近，止损设在第1日开盘价下方。
+
+instructions_en: |
+  **One Yang Three Yin Strategy**
+
+  Pattern Definition (last 5 trading days):
+
+  1. **Day 1**: Large bullish candle (close > open, body > 2% of stock price).
+  2. **Days 2-4**: Three consecutive bearish candles or small candles:
+     - Each candle's low must not break below Day 1's open price.
+     - Volume should gradually shrink (volume ratio < 0.8).
+     - The three candles should close within Day 1's body range.
+  3. **Day 5**: Another bullish candle, closing above Day 1's close price.
+
+  How to Use Tools for Evaluation:
+
+  1. Use `get_daily_history` to get the last 10 days of data.
+  2. Check if the last 5 candles match the pattern above.
+  3. Use `analyze_trend` to confirm bullish alignment (related concept 2: trend trading, MA5 > MA10 > MA20).
+
+  Scoring Adjustments:
+  - Pattern confirmed + bullish trend: sentiment_score +15
+  - Pattern confirmed but trend unclear: sentiment_score +5
+  - Note "One Yang Between Three Yins" in `pattern_analysis` and `buy_reason`.
+  - Ideal entry point set near Day 5 close, stop-loss set below Day 1 open.

@@ -172,6 +172,7 @@ from src.services.stock_index_remote_service import (
     refresh_remote_stock_index_cache,
     settings_from_config,
 )
+from src.i18n import t as _t
 
 
 _STOCK_INDEX_FILENAME = "stocks.index.json"
@@ -314,14 +315,14 @@ def create_app(static_dir: Optional[Path] = None) -> FastAPI:
     app = FastAPI(
         title="Daily Stock Analysis API",
         description=(
-            "A股/港股/美股自选股智能分析系统 API\n\n"
-            "## 功能模块\n"
-            "- 股票分析：触发 AI 智能分析\n"
-            "- 历史记录：查询历史分析报告\n"
-            "- 股票数据：获取行情数据\n\n"
-            "## 认证方式\n"
-            "支持可选管理员认证：ADMIN_AUTH_ENABLED=true 时，除登录、状态、健康检查和 "
-            "OpenAPI 文档外，/api/v1/* 需要有效管理员会话 Cookie；关闭时不强制认证。"
+            _t("api.app_description") + "\n\n"
+            "## Modules\n"
+            + _t("api.feature_analysis") + "\n"
+            + _t("api.feature_history") + "\n"
+            + _t("api.feature_data") + "\n\n"
+            "## Authentication\n"
+            "Optional admin auth: when ADMIN_AUTH_ENABLED=true, /api/v1/* requires a valid admin session cookie "
+            "(except login, status, health check, and OpenAPI docs). When disabled, auth is not enforced."
         ),
         version="1.0.0",
         lifespan=app_lifespan,
@@ -420,15 +421,15 @@ def create_app(static_dir: Optional[Path] = None) -> FastAPI:
         "/health",
         response_model=HealthResponse,
         tags=["Health"],
-        summary="健康检查",
-        description="用于负载均衡器或监控系统检查服务状态"
+        summary=_t("api.health_check"),
+        description=_t("api.health_check_desc")
     )
     @app.get(
         "/api/health",
         response_model=HealthResponse,
         tags=["Health"],
-        summary="健康检查",
-        description="用于负载均衡器或监控系统检查服务状态"
+        summary=_t("api.health_check"),
+        description=_t("api.health_check_desc")
     )
     async def health_check() -> HealthResponse:
         """健康检查接口"""

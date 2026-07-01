@@ -2,7 +2,9 @@
 
 name: hot_theme
 display_name: 热点题材
+display_name_en: "Hot Theme"
 description: 跟踪政策、产业和市场热点，判断题材强度、板块扩散和个股相对强弱。
+description_en: "Tracks policy, industry, and market hotspots. Judges theme strength, sector diffusion, and relative stock strength."
 category: framework
 core_rules: [2, 3, 5, 7]
 required_tools:
@@ -52,3 +54,42 @@ instructions: |
   - 个股强于板块并有量能确认：额外 `+6`
   - 热点进入分化或退潮：`sentiment_score -8`
   - 仅概念蹭热点且乖离率过高：`sentiment_score -12`
+
+instructions_en: |
+  **Hot Theme Strategy**
+
+  Applicable Scenarios:
+  - Clear policy, industry, technology roadmap, or capital clustering hotspot emerges in the market.
+  - Need to determine whether a stock genuinely benefits from the hotspot, rather than merely riding on the concept.
+
+  Analysis Framework:
+
+  1. **Theme Strength**
+     - Use `get_sector_rankings` to determine if the related sector is at the top in recent gains, turnover, or popularity.
+     - Observe whether the hotspot has diffused from a few core stocks to multiple stocks within the sector.
+     - If only a single stock moves without sector resonance, reduce signal weight.
+
+  2. **Stock Relevance**
+     - Use `search_stock_news` to check if the company's business, orders, capacity, customers, and announcements are directly related to the hotspot.
+     - Distinguish between "substantially benefited," "indirectly benefited," and "weak concept association."
+     - When concept association is weak but the price surge is excessive, alert on theme realization risk.
+
+  3. **Relative Strength**
+     - Use `get_realtime_quote` and `analyze_trend` to determine if the stock's gains, volume ratio, and turnover rate are stronger than the sector average.
+     - Strong hotspot stocks typically show volume expansion, active turnover, and pullbacks holding above key MAs.
+
+  4. **Rhythm & Risk**
+     - Do not chase at consecutive acceleration with high deviation rate.
+     - If news focuses on "already surged," "capital chasing," or "dragon-tiger board retail speculation," be alert for short-term sentiment peaks.
+     - Major negative news, regulatory inquiries, or clarification announcements can single-handedly downgrade the rating.
+
+  Output Requirements:
+  - Clearly state the current theme stage: Launch / Diffusion / Differentiation / Retreat.
+  - Explain the stock's substantive relevance to the theme.
+  - Provide actionable trigger conditions: pullback absorption, volume breakout, continued sector resonance, or retreat stop-loss.
+
+  Scoring Adjustment Suggestions:
+  - Theme in launch or diffusion phase, and stock substantially benefits: `sentiment_score +12`
+  - Stock outperforms sector with volume confirmation: additional `+6`
+  - Theme enters differentiation or retreat: `sentiment_score -8`
+  - Only concept-riding with excessive deviation: `sentiment_score -12`

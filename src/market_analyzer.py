@@ -34,6 +34,7 @@ from src.schemas.market_light import MARKET_LIGHT_REGIONS, MarketLightSnapshot
 from src.services.run_diagnostics import record_llm_run, record_llm_run_started
 from src.services.intelligence_service import IntelligenceService
 from data_provider.base import DataFetcherManager
+from data_provider.us_index_mapping import translate_index_name
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +158,7 @@ class MarketAnalyzer:
     def _get_output_language(self) -> str:
         """Return the truthful report language (zh/en/ko) for payload and directives."""
         return normalize_report_language(
-            getattr(getattr(self, "config", None), "report_language", "zh")
+            getattr(getattr(self, "config", None), "report_language", "en")
         )
 
     def _get_review_language(self) -> str:
@@ -796,7 +797,10 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
             "generated_at": datetime.now().isoformat(),
             "date": overview.date,
             "market_scope": self._get_market_scope_name(language),
-            "indices": [idx.to_dict() for idx in overview.indices],
+            "indices": [
+                {**idx.to_dict(), "name": translate_index_name(idx.name, language)}
+                for idx in overview.indices
+            ],
             "sectors": {
                 "top": list(overview.top_sectors or []),
                 "bottom": list(overview.bottom_sectors or []),
@@ -1101,12 +1105,14 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
                 "| 指数 | 最新 | 涨跌幅 | 开盘 | 最高 | 最低 | 振幅 | 成交额(亿) |",
                 "|------|------|--------|------|------|------|------|-----------|",
             ]
+        language = self._get_review_language()
         for idx in overview.indices:
             arrow = self._get_index_change_arrow(idx.change_pct)
             amount_raw = idx.amount or 0.0
             amount_str = self._format_turnover_value(amount_raw)
+            idx_name = translate_index_name(idx.name, language)
             lines.append(
-                f"| {idx.name} | {idx.current:.2f} | {arrow} {idx.change_pct:+.2f}% | "
+                f"| {idx_name} | {idx.current:.2f} | {arrow} {idx.change_pct:+.2f}% | "
                 f"{self._format_optional_number(idx.open)} | {self._format_optional_number(idx.high)} | "
                 f"{self._format_optional_number(idx.low)} | {self._format_optional_pct(idx.amplitude)} | {amount_str} |"
             )
@@ -1180,7 +1186,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
         return str(value).strip()
 
     @classmethod
-    def _format_news_catalyst_line(cls, idx: int, item: Any, *, language: str = "zh") -> str:
+    def _format_news_catalyst_line(cls, idx: int, item: Any, *, language: str = "en") -> str:
         fallback_title = "Untitled catalyst" if language == "en" else "未命名线索"
         title = cls._compact_news_text(cls._get_news_field(item, "title"), limit=90) or fallback_title
         source = cls._compact_news_text(cls._get_news_field(item, "source"), limit=40)

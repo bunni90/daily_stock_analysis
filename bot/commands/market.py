@@ -13,6 +13,7 @@ from typing import Any, List, Optional
 
 from bot.commands.base import BotCommand
 from bot.models import BotMessage, BotResponse
+from src.i18n import t as _t
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class MarketCommand(BotCommand):
 
     @property
     def description(self) -> str:
-        return "大盘复盘分析"
+        return _t("bot.market.desc")
 
     @property
     def usage(self) -> str:
@@ -52,7 +53,7 @@ class MarketCommand(BotCommand):
         config = self._get_config()
         lock_token = self._try_acquire_market_review_lock(config)
         if lock_token is None:
-            return BotResponse.markdown_response("⚠️ 大盘复盘正在执行中，请稍后再试。")
+            return BotResponse.markdown_response(_t("bot.market.running"))
 
         thread = threading.Thread(
             target=self._run_market_review,
@@ -68,17 +69,17 @@ class MarketCommand(BotCommand):
             )
             self._release_market_review_lock(lock_token)
             return BotResponse.error_response(
-                "大盘复盘启动失败，已释放运行锁；请稍后重试"
+                _t("bot.market.start_failed")
             )
 
         return BotResponse.markdown_response(
-            "✅ **大盘复盘任务已启动**\n\n"
-            "正在分析：\n"
-            "• 主要指数表现\n"
-            "• 板块热点分析\n"
-            "• 市场情绪判断\n"
-            "• 后市展望\n\n"
-            "分析完成后将自动推送结果。"
+            f"{_t('bot.market.started')}\n\n"
+            f"{_t('bot.market.analyzing')}\n"
+            f"• {_t('bot.market.index_performance')}\n"
+            f"• {_t('bot.market.sector_hotspots')}\n"
+            f"• {_t('bot.market.sentiment')}\n"
+            f"• {_t('bot.market.outlook')}\n\n"
+            f"{_t('bot.market.will_notify')}"
         )
 
     def _get_config(self):
@@ -127,7 +128,7 @@ class MarketCommand(BotCommand):
                 logger.info("[MarketCommand] 今日相关市场休市，跳过大盘复盘")
                 if notifier.is_available():
                     notifier.send(
-                        "🎯 大盘复盘\n\n今日相关市场休市，已跳过大盘复盘。",
+                        _t("bot.market.holiday_skip"),
                         email_send_to_all=True,
                         route_type="report",
                     )

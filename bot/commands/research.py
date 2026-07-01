@@ -16,6 +16,7 @@ from typing import List, Optional
 from bot.commands.base import BotCommand
 from bot.models import BotMessage, BotResponse
 from src.config import get_config
+from src.i18n import t as _t
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class ResearchCommand(BotCommand):
 
         if not config.agent_mode:
             return BotResponse.text_response(
-                "⚠️ Agent 模式未开启，无法使用深度研究功能。\n请在配置中设置 `AGENT_MODE=true`。"
+                _t("bot.research.agent_disabled")
             )
 
         # Parse arguments — first arg may be stock code, rest is the question
@@ -115,7 +116,7 @@ class ResearchCommand(BotCommand):
             if getattr(result, "timed_out", False):
                 logger.warning("[ResearchCommand] Deep research timed out after %ss", duration)
                 return BotResponse.text_response(
-                    f"⏳ 深度研究超时（{duration}s / {research_timeout}s），请稍后重试或缩小研究范围。"
+                    _t("bot.research.timeout", duration=duration, limit=research_timeout)
                 )
 
             if result.success:

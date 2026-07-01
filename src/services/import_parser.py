@@ -18,6 +18,7 @@ import pandas as pd
 
 from src.services.name_to_code_resolver import resolve_name_to_code
 from src.services.stock_code_utils import is_code_like, normalize_code
+from src.i18n import t as _t
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +141,7 @@ def parse_import_from_bytes(data: bytes, filename: Optional[str] = None) -> List
         ValueError: On parse error or unsupported format.
     """
     if len(data) > MAX_FILE_BYTES:
-        raise ValueError(f"文件超过 {MAX_FILE_BYTES // (1024 * 1024)}MB 限制")
+        raise ValueError(_t("import.file_too_large", size=MAX_FILE_BYTES // (1024 * 1024)))
 
     ext = ""
     if filename:
@@ -167,16 +168,16 @@ def parse_import_from_bytes(data: bytes, filename: Optional[str] = None) -> List
             # If bytes strongly indicate xlsx container, treat as real Excel parse failure.
             if looks_like_zip:
                 hint = (
-                    "请确认：(1) 文件为 .xlsx 格式；(2) 工作表不为空；(3) 文件未损坏。"
-                    "若为 .xls 格式，请另存为 .xlsx 后重试。"
+                    _t("import.xlsx_hint")
+                    + _t("import.xls_hint")
                 )
-                raise ValueError(f"Excel 解析失败: {e}。{hint}") from e
+                raise ValueError(_t("import.excel_parse_failed", error=e, hint=hint)) from e
             # For extension-only mismatch (e.g. csv named .xlsx), fallback to text parsing.
             logger.warning(f"扩展名为 .xlsx 但未解析为 Excel，将回退文本解析: {e}")
 
     # .xls not supported
     if ext == ".xls":
-        raise ValueError("仅支持 .xlsx 格式，请将 .xls 另存为 .xlsx 后重试")
+        raise ValueError(_t("import.xls_only"))
 
     # CSV / text
     for encoding in ("utf-8", "gbk"):
@@ -186,7 +187,7 @@ def parse_import_from_bytes(data: bytes, filename: Optional[str] = None) -> List
         except UnicodeDecodeError:
             continue
     else:
-        raise ValueError("无法识别文件编码，请使用 UTF-8 或 GBK")
+        raise ValueError(_t("import.encoding_failed"))
 
     # Single-column (one value per line): bypass pandas to avoid sep=None inference issues
     # e.g. "00700\n600519" or "code\n00700" - pandas with sep=None can produce wrong results
@@ -212,8 +213,8 @@ def parse_import_from_bytes(data: bytes, filename: Optional[str] = None) -> List
             return _parse_dataframe(df)
     except pd.errors.ParserError as e:
         raise ValueError(
-            f"CSV 解析失败：请检查分隔符是否一致、列数是否匹配。"
-            f"常见原因：引号未闭合、某行列数与其他行不一致。原始错误: {e}"
+            _t("import.csv_parse_failed")
+            + _t("import.csv_parse_hint", error=e)
         ) from e
     except Exception:
         pass
@@ -245,7 +246,7 @@ def parse_import_from_text(text: str) -> List[Tuple[Optional[str], Optional[str]
         List of (code, name, confidence).
     """
     if len(text.encode("utf-8")) > MAX_TEXT_BYTES:
-        raise ValueError(f"文本超过 {MAX_TEXT_BYTES // 1024}KB 限制")
+        raise ValueError(_t("import.text_too_large", size=MAX_TEXT_BYTES // 1024))
 
     logger.debug(f"[ImportParser] 开始解析粘贴文本: bytes={len(text.encode('utf-8'))}")
     data = text.encode("utf-8")

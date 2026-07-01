@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, Check, ChevronDown, Copy, Workflow } from 'lucide-react';
 import { historyApi } from '../../api/history';
 import { formatUiText, UI_TEXT } from '../../i18n/uiText';
+import type { UiTextKey } from '../../i18n/uiText';
 import type {
   ReportLanguage,
   RunDiagnosticComponent,
@@ -124,6 +125,32 @@ const TEXT = {
     },
   },
 } as const;
+
+const DIAGNOSTICS_I18N_PREFIX = 'diagnostics.';
+
+function resolveDiagnosticI18n(
+  key: string | null | undefined,
+  fallback: string,
+  params?: Record<string, string> | null,
+): string {
+  if (!key || !key.startsWith(DIAGNOSTICS_I18N_PREFIX)) return fallback;
+  try {
+    const resolvedParams: Record<string, string | number> = {};
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (v.startsWith(DIAGNOSTICS_I18N_PREFIX)) {
+          resolvedParams[k] = UI_TEXT.en[v as UiTextKey] ? UI_TEXT[document.documentElement.lang === 'en' ? 'en' : 'zh'][v as UiTextKey] : v;
+        } else {
+          resolvedParams[k] = v;
+        }
+      }
+    }
+    const lang = document.documentElement.lang === 'en' ? 'en' : 'zh';
+    const template = UI_TEXT[lang][key as UiTextKey];
+    if (template) return formatUiText(template, resolvedParams);
+  } catch { /* fall through */ }
+  return fallback;
+}
 
 const OVERALL_STATUS_STYLE: Record<RunDiagnosticStatus, { variant: BadgeVariant; tone: StatusTone }> = {
   normal: { variant: 'success', tone: 'success' },
@@ -396,10 +423,10 @@ export const ReportDiagnostics: React.FC<ReportDiagnosticsProps> = ({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground">
-                          {component.label}
+                          {resolveDiagnosticI18n(component.labelKey, component.label)}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-secondary-text">
-                          {component.message}
+                          {resolveDiagnosticI18n(component.messageKey, component.message, component.messageParams)}
                         </p>
                       </div>
                       <Badge variant={componentStyle.variant} className="shrink-0 gap-1.5 shadow-none">

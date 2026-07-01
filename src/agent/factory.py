@@ -352,6 +352,8 @@ def build_agent_executor(config=None, skills: Optional[List[str]] = None):
         skill_instructions=prompt_state.skill_instructions,
         default_skill_policy=prompt_state.default_skill_policy,
         use_legacy_default_prompt=prompt_state.use_legacy_default_prompt,
+        skill_manager=skill_manager,
+        explicit_skill_selection=prompt_state.explicit_skill_selection,
         max_steps=_coerce_config_int(
             getattr(config, "agent_max_steps", AGENT_MAX_STEPS_DEFAULT),
             AGENT_MAX_STEPS_DEFAULT,
